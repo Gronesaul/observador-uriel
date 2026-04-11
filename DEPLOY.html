@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ObservadorUriel — Guía de Deploy</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; color: #1a1a2e; }
+  .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 1.9rem; font-weight: 800; color: #1a1a2e; margin-bottom: 6px; }
+  .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 32px; }
+  h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0; }
+  h3 { font-size: 1rem; font-weight: 700; color: #1a1a2e; margin: 20px 0 10px; }
+  p { line-height: 1.65; color: #444; margin-bottom: 10px; }
+
+  .step { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 24px; overflow: hidden; }
+  .step-header { display: flex; align-items: center; gap: 14px; padding: 18px 22px; }
+  .step-num { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; color: #fff; flex-shrink: 0; }
+  .step-body { padding: 20px 22px; }
+
+  .s1 .step-header { background: #2d7a4f; }
+  .s2 .step-header { background: #1e3a5f; }
+  .s3 .step-header { background: #7c3aed; }
+  .s4 .step-header { background: #b45309; }
+
+  pre { background: #1e1e2e; color: #cdd6f4; border-radius: 10px; padding: 16px; font-size: 0.82rem; overflow-x: auto; margin: 10px 0; line-height: 1.6; }
+  code { font-family: 'Courier New', monospace; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 12px 0; }
+  th { background: #f0f4f8; text-align: left; padding: 9px 12px; font-weight: 700; color: #333; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f0f4f8; color: #444; vertical-align: top; }
+  td:first-child { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #2d7a4f; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+
+  .tag { display: inline-block; background: #e8f5ee; color: #2d7a4f; border-radius: 6px; padding: 2px 8px; font-size: 0.78rem; font-weight: 700; margin: 2px; }
+  .tag.red { background: #fef2f2; color: #dc2626; }
+  .tag.blue { background: #eff6ff; color: #1d4ed8; }
+
+  .alert { border-radius: 10px; padding: 14px 16px; margin: 12px 0; font-size: 0.9rem; }
+  .alert-green { background: #ecfdf5; border-left: 4px solid #2d7a4f; color: #065f46; }
+  .alert-orange { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+  .alert-red { background: #fef2f2; border-left: 4px solid #ef4444; color: #7f1d1d; }
+
+  .substep { background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin: 12px 0; border: 1px solid #e2e8f0; }
+  .substep-title { font-weight: 700; font-size: 0.88rem; color: #555; margin-bottom: 8px; }
+
+  .cred-table td:first-child { font-family: 'Segoe UI', sans-serif; font-weight: 600; color: #444; }
+  .cred-table td:nth-child(2) { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #2d7a4f; }
+  .cred-table td:nth-child(3) { font-family: 'Courier New', monospace; font-size: 0.85rem; color: #7c3aed; }
+
+  .trouble-item { margin-bottom: 16px; }
+  .trouble-q { font-weight: 700; color: #dc2626; font-size: 0.9rem; margin-bottom: 4px; }
+  .trouble-a { font-size: 0.88rem; color: #555; }
+
+  footer { text-align: center; color: #aaa; font-size: 0.82rem; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🏫 ObservadorUriel</h1>
+  <p class="subtitle">Guía completa de deploy — Backend en Railway · Frontend en Netlify</p>
+
+  <!-- PASO 1: GitHub -->
+  <div class="step s1">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <h2>Subir el proyecto a GitHub</h2>
+    </div>
+    <div class="step-body">
+      <p>Primero debes tener el repositorio en GitHub. Abre una terminal dentro de la carpeta <code>ObservadorUriel</code> y ejecuta:</p>
+      <pre><code>git init
+git add .
+git commit -m "ObservadorUriel - deploy inicial"
+git branch -M main
+git remote add origin https://github.com/TU_USUARIO/observador-uriel.git
+git push -u origin main</code></pre>
+      <div class="alert alert-orange">⚠️ Reemplaza <strong>TU_USUARIO</strong> con tu usuario de GitHub. Si aún no tienes el repo creado, créalo primero en github.com (sin inicializar con README).</div>
+    </div>
+  </div>
+
+  <!-- PASO 2: Railway -->
+  <div class="step s2">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <h2>Backend en Railway (FastAPI)</h2>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <div class="substep-title">2.1 — Crear el proyecto</div>
+        <ol style="padding-left:18px; line-height:2; font-size:0.9rem; color:#444;">
+          <li>Ve a <strong>railway.app</strong> → <em>New Project</em></li>
+          <li>Elige <em>Deploy from GitHub repo</em> → selecciona <code>observador-uriel</code></li>
+          <li>Railway detecta el <code>railway.toml</code> automáticamente</li>
+        </ol>
+        <div class="alert alert-orange" style="margin-top:10px">
+          Si Railway <em>no</em> detecta el backend, configura manualmente:<br>
+          <strong>Root Directory:</strong> <code>backend</code><br>
+          <strong>Start Command:</strong> <code>uvicorn main:app --host 0.0.0.0 --port $PORT</code>
+        </div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-title">2.2 — Agregar PostgreSQL</div>
+        <ol style="padding-left:18px; line-height:2; font-size:0.9rem; color:#444;">
+          <li>Dentro de tu proyecto en Railway → <em>+ New</em> → <em>Database</em> → <em>Add PostgreSQL</em></li>
+          <li>Railway vincula <code>DATABASE_URL</code> automáticamente ✅</li>
+        </ol>
+      </div>
+
+      <div class="substep">
+        <div class="substep-title">2.3 — Variables de entorno</div>
+        <p style="font-size:0.88rem; color:#555; margin-bottom:8px;">Ve a la sección <strong>Variables</strong> de tu servicio backend y agrega:</p>
+        <table>
+          <tr><th>Variable</th><th>Valor</th></tr>
+          <tr><td>SECRET_KEY</td><td>Genera una clave larga (ver abajo)</td></tr>
+          <tr><td>ALGORITHM</td><td>HS256</td></tr>
+        </table>
+        <p style="font-size:0.88rem; color:#555; margin-top:8px;">Para generar <code>SECRET_KEY</code>, ejecuta en terminal:</p>
+        <pre><code>python3 -c "import secrets; print(secrets.token_hex(32))"</code></pre>
+      </div>
+
+      <div class="substep">
+        <div class="substep-title">2.4 — Obtener la URL del backend</div>
+        <p style="font-size:0.88rem; color:#555;">Una vez desplegado, Railway te da una URL así:</p>
+        <pre><code>https://observador-uriel-production.up.railway.app</code></pre>
+        <div class="alert alert-green">✅ <strong>Copia esta URL.</strong> La necesitas para configurar el frontend en el Paso 3.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 3: Netlify -->
+  <div class="step s3">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <h2>Frontend en Netlify (React/Vite)</h2>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <div class="substep-title">3.1 — Conectar con GitHub</div>
+        <ol style="padding-left:18px; line-height:2; font-size:0.9rem; color:#444;">
+          <li>Ve a <strong>netlify.com</strong> → <em>Add new site</em> → <em>Import from Git</em></li>
+          <li>Selecciona tu repo <code>observador-uriel</code></li>
+          <li>Netlify detecta el <code>netlify.toml</code>. Verifica que quede así:</li>
+        </ol>
+        <table style="margin-top:8px">
+          <tr><th>Campo</th><th>Valor</th></tr>
+          <tr><td>Base directory</td><td>frontend</td></tr>
+          <tr><td>Build command</td><td>npm run build</td></tr>
+          <tr><td>Publish directory</td><td>frontend/dist</td></tr>
+        </table>
+      </div>
+
+      <div class="substep">
+        <div class="substep-title">3.2 — Variable de entorno en Netlify</div>
+        <p style="font-size:0.88rem; color:#555; margin-bottom:8px;">
+          Ve a <strong>Site settings → Environment variables → Add variable</strong>:
+        </p>
+        <table>
+          <tr><th>Key</th><th>Value</th></tr>
+          <tr><td>VITE_API_URL</td><td>https://observador-uriel-production.up.railway.app</td></tr>
+        </table>
+        <div class="alert alert-orange" style="margin-top:10px">⚠️ Usa la URL real de Railway que copiaste en el Paso 2.4 — <strong>sin</strong> barra al final.</div>
+      </div>
+
+      <div class="substep">
+        <div class="substep-title">3.3 — Deploy</div>
+        <p style="font-size:0.88rem; color:#555;">Haz clic en <strong>Deploy site</strong>. Netlify construye e instala todo automáticamente en ~2 minutos.</p>
+        <div class="alert alert-green">✅ Tu site quedará en algo como: <code>https://observador-uriel.netlify.app</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 4: CORS -->
+  <div class="step s4">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <h2>Configurar CORS (conectar Railway ↔ Netlify)</h2>
+    </div>
+    <div class="step-body">
+      <p>Una vez tengas la URL de Netlify, vuelve a Railway y agrega esta variable en el backend:</p>
+      <table>
+        <tr><th>Variable</th><th>Valor</th></tr>
+        <tr><td>FRONTEND_URL</td><td>https://observador-uriel.netlify.app</td></tr>
+      </table>
+      <div class="alert alert-orange" style="margin-top:10px">⚠️ Después de agregar la variable, Railway redespliega automáticamente el backend.</div>
+    </div>
+  </div>
+
+  <!-- Credenciales iniciales -->
+  <div class="step" style="border: 2px solid #2d7a4f;">
+    <div class="step-header" style="background:#2d7a4f;">
+      <div class="step-num">🔑</div>
+      <h2>Credenciales iniciales</h2>
+    </div>
+    <div class="step-body">
+      <table class="cred-table">
+        <tr><th>Usuario</th><th>Documento (login)</th><th>Contraseña</th><th>Rol</th></tr>
+        <tr><td>Alexander Padilla</td><td>admin</td><td>docente2026</td><td><span class="tag">Admin</span></td></tr>
+        <tr><td>David Salazar</td><td>rector</td><td>rector2026</td><td><span class="tag">Admin</span></td></tr>
+        <tr><td>Coordinación</td><td>coord</td><td>coord2026</td><td><span class="tag blue">Coordinador</span></td></tr>
+      </table>
+      <div class="alert alert-red" style="margin-top:12px">🔒 <strong>Cambia las contraseñas después del primer ingreso.</strong> Los admins pueden crear nuevos docentes desde el menú <em>Docentes</em>.</div>
+    </div>
+  </div>
+
+  <!-- Verificación -->
+  <div class="step" style="background: #f0fdf4; border: 2px solid #86efac;">
+    <div class="step-header" style="background: #16a34a;">
+      <div class="step-num">✅</div>
+      <h2>Verificar que todo funciona</h2>
+    </div>
+    <div class="step-body">
+      <ol style="padding-left:18px; line-height:2.2; font-size:0.92rem; color:#166534;">
+        <li>Entra a tu URL de Netlify e inicia sesión con <code>admin</code> / <code>docente2026</code></li>
+        <li>Ve a <strong>Estudiantes</strong> → deberías ver los 124 estudiantes cargados</li>
+        <li>Haz clic en un estudiante → <strong>Nueva Anotación</strong> → llena el formulario</li>
+        <li>Verifica que aparece el protocolo sugerido al guardar</li>
+        <li>Si el acudiente tiene teléfono registrado, verifica que aparece el botón de WhatsApp</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Solución de problemas -->
+  <div class="step">
+    <div class="step-header" style="background:#374151;">
+      <div class="step-num">🛠️</div>
+      <h2>Solución de problemas comunes</h2>
+    </div>
+    <div class="step-body">
+      <div class="trouble-item">
+        <div class="trouble-q">❌ Error 500 / "Internal Server Error"</div>
+        <div class="trouble-a">Verifica que <code>DATABASE_URL</code> está configurada en Railway. Revisa los logs del servicio en Railway → sección <em>Deployments</em>.</div>
+      </div>
+      <div class="trouble-item">
+        <div class="trouble-q">❌ Error CORS (blocked by CORS policy)</div>
+        <div class="trouble-a">Verifica que <code>FRONTEND_URL</code> en Railway tiene exactamente la misma URL que Netlify, <strong>sin barra al final</strong>. Redespliega el backend.</div>
+      </div>
+      <div class="trouble-item">
+        <div class="trouble-q">❌ Página en blanco en Netlify</div>
+        <div class="trouble-a">Verifica que <code>VITE_API_URL</code> está configurada en las variables de entorno de Netlify. Reconstruye el site desde Netlify → <em>Deploys</em> → <em>Trigger deploy</em>.</div>
+      </div>
+      <div class="trouble-item">
+        <div class="trouble-q">❌ WhatsApp no abre el mensaje</div>
+        <div class="trouble-a">El teléfono del acudiente debe estar registrado en la ficha del estudiante. Debe ser número colombiano de 10 dígitos (sin +57). Edítalo desde la ficha del estudiante.</div>
+      </div>
+      <div class="trouble-item" style="margin-bottom:0">
+        <div class="trouble-q">❌ No aparecen los 124 estudiantes</div>
+        <div class="trouble-a">La función <code>importar_estudiantes_inicial()</code> en <code>main.py</code> solo carga si la tabla está vacía. Si tienes datos corruptos, borra la base de datos en Railway y redespliegua.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    ObservadorUriel · IERD Uriel Murcia, Yacopí, Cundinamarca · 2026
+  </footer>
+</div>
+</body>
+</html>

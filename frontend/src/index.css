@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-gray-50 text-gray-800 antialiased; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-verde text-white font-semibold px-4 py-2 rounded-lg
+           hover:bg-verde-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-white border-2 border-verde text-verde font-semibold px-4 py-2 rounded-lg
+           hover:bg-verde-bg transition-colors;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-md p-5;
+  }
+  .badge-tipo1 { @apply bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded-full; }
+  .badge-tipo2 { @apply bg-orange-100 text-orange-800 text-xs font-bold px-2 py-0.5 rounded-full; }
+  .badge-tipo3 { @apply bg-red-100 text-red-800 text-xs font-bold px-2 py-0.5 rounded-full; }
+}
