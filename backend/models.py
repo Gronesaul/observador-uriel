@@ -52,9 +52,16 @@ class Anotacion(Base):
     estudiante_id = Column(Integer, ForeignKey("estudiantes.id"), nullable=False)
     docente_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
 
-    # Clasificación según Decreto 1965/2013
-    tipo_falta = Column(String, nullable=False)   # "tipo1" | "tipo2" | "tipo3"
-    categoria = Column(String, nullable=True)      # Subcategoría de la falta
+    # Tipo de registro
+    tipo_registro = Column(String, default="situacion", nullable=True)
+    # "situacion" → Situación Tipo I/II/III (Decreto 1965/2013)
+    # "falta"     → Falta al Manual de Convivencia (proceso disciplinario interno)
+
+    # Clasificación
+    tipo_falta = Column(String, nullable=False)
+    # Si tipo_registro="situacion": "tipo1" | "tipo2" | "tipo3"
+    # Si tipo_registro="falta":    "leve"  | "grave" | "gravisima"
+    categoria = Column(String, nullable=True)      # Subcategoría específica
 
     descripcion = Column(Text, nullable=False)
     acciones_inmediatas = Column(Text, nullable=True)

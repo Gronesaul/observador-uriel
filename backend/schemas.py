@@ -67,7 +67,8 @@ class EstudianteUpdate(BaseModel):
 # ── ANOTACION ─────────────────────────────────────────
 class AnotacionCreate(BaseModel):
     estudiante_id: int
-    tipo_falta: str        # "tipo1" | "tipo2" | "tipo3"
+    tipo_registro: str = "situacion"  # "situacion" | "falta"
+    tipo_falta: str        # situacion: "tipo1"|"tipo2"|"tipo3" / falta: "leve"|"grave"|"gravisima"
     categoria: Optional[str] = None
     descripcion: str
     acciones_inmediatas: Optional[str] = None
@@ -77,6 +78,7 @@ class AnotacionOut(BaseModel):
     id: int
     estudiante_id: int
     docente_id: int
+    tipo_registro: Optional[str] = "situacion"
     tipo_falta: str
     categoria: Optional[str]
     descripcion: str

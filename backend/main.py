@@ -14,6 +14,21 @@ from routers import (
 Base.metadata.create_all(bind=engine)
 
 
+def migrar_columnas():
+    """Agrega columnas nuevas sin borrar datos existentes (safe migration)."""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        migraciones = [
+            "ALTER TABLE anotaciones ADD COLUMN IF NOT EXISTS tipo_registro VARCHAR DEFAULT 'situacion'",
+        ]
+        for sql in migraciones:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                pass  # La columna ya existe, ignorar
+
+
 def crear_admin_inicial():
     from database import SessionLocal
     from auth import hashear_contrasena
@@ -191,6 +206,7 @@ def importar_estudiantes_inicial():
         db.close()
 
 
+migrar_columnas()
 crear_admin_inicial()
 importar_estudiantes_inicial()
 

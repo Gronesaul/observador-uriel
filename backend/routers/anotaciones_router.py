@@ -21,21 +21,35 @@ def crear_anotacion(
     if not est:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
 
-    # Contar anotaciones previas
+    # Contar anotaciones previas — separadas por track
     previas = db.query(models.Anotacion).filter(
         models.Anotacion.estudiante_id == data.estudiante_id
     ).all()
-    t1 = sum(1 for a in previas if a.tipo_falta == "tipo1")
-    t2 = sum(1 for a in previas if a.tipo_falta == "tipo2")
-    t3 = sum(1 for a in previas if a.tipo_falta == "tipo3")
 
-    # Calcular protocolo
-    protocolo = calcular_protocolo(t1, t2, t3, data.tipo_falta)
+    tipo_registro = getattr(data, "tipo_registro", "situacion") or "situacion"
+
+    # Conteos para SITUACIONES
+    t1 = sum(1 for a in previas if (a.tipo_registro or "situacion") == "situacion" and a.tipo_falta == "tipo1")
+    t2 = sum(1 for a in previas if (a.tipo_registro or "situacion") == "situacion" and a.tipo_falta == "tipo2")
+    t3 = sum(1 for a in previas if (a.tipo_registro or "situacion") == "situacion" and a.tipo_falta == "tipo3")
+
+    # Conteos para FALTAS
+    leves     = sum(1 for a in previas if (a.tipo_registro or "situacion") == "falta" and a.tipo_falta == "leve")
+    graves    = sum(1 for a in previas if (a.tipo_registro or "situacion") == "falta" and a.tipo_falta == "grave")
+    gravisimas = sum(1 for a in previas if (a.tipo_registro or "situacion") == "falta" and a.tipo_falta == "gravisima")
+
+    # Calcular protocolo según el track correcto
+    protocolo = calcular_protocolo(
+        t1, t2, t3, data.tipo_falta,
+        tipo_registro=tipo_registro,
+        leves=leves, graves=graves, gravisimas=gravisimas
+    )
 
     # Crear anotación
     anotacion = models.Anotacion(
         estudiante_id=data.estudiante_id,
         docente_id=usuario.id,
+        tipo_registro=tipo_registro,
         tipo_falta=data.tipo_falta,
         categoria=data.categoria,
         descripcion=data.descripcion,
@@ -72,6 +86,7 @@ def crear_anotacion(
             nombre_docente=f"{usuario.nombres} {usuario.apellidos}",
             fecha=anotacion.fecha_anotacion.strftime("%d/%m/%Y"),
             telefono=est.telefono_acudiente,
+            tipo_registro=tipo_registro,
         )
 
     return AnotacionOut(
