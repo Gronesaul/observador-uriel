@@ -94,11 +94,15 @@ export default function NuevaAnotacion() {
     if (!validar()) return
     setSending(true)
     try {
-      const { data } = await crearAnotacion(id, form)
+      const { data } = await crearAnotacion({ estudiante_id: parseInt(id), ...form })
       setResultado(data)
     } catch (err) {
       console.error(err)
-      setErrors({ general: err.response?.data?.detail || 'Error al guardar. Intenta de nuevo.' })
+      const detail = err.response?.data?.detail
+      const mensaje = Array.isArray(detail)
+        ? detail.map(d => d.msg || JSON.stringify(d)).join(' | ')
+        : (typeof detail === 'string' ? detail : 'Error al guardar. Intenta de nuevo.')
+      setErrors({ general: mensaje })
     } finally {
       setSending(false)
     }
