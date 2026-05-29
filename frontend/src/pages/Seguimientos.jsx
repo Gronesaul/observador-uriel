@@ -30,11 +30,22 @@ const ESTADO_LABELS = {
   completado: 'Completado',
 }
 
+const TIPO_FALTA_LABELS = {
+  tipo1:     'Situación Tipo I',
+  tipo2:     'Situación Tipo II',
+  tipo3:     'Situación Tipo III',
+  leve:      'Falta Leve',
+  grave:     'Falta Grave',
+  gravisima: 'Falta Gravísima',
+}
+
 export default function Seguimientos() {
   const navigate = useNavigate()
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
   const [seguimientos, setSeguimientos] = useState([])
   const [loading, setLoading] = useState(true)
   const [filtroEstado, setFiltroEstado] = useState('pendiente')
+  const [filtroBuscar, setFiltroBuscar] = useState('')
   const [expandido, setExpandido] = useState(null)
   const [editando, setEditando] = useState(null)
   const [editForm, setEditForm] = useState({ estado: '', observaciones: '', compromisos: '' })
@@ -51,9 +62,18 @@ export default function Seguimientos() {
 
   useEffect(() => { cargar() }, [])
 
-  const filtrados = filtroEstado === 'todos'
-    ? seguimientos
-    : seguimientos.filter(s => s.estado === filtroEstado)
+  // Filtrado: por estado + búsqueda de nombre/sede/grado
+  const filtrados = seguimientos
+    .filter(s => filtroEstado === 'todos' || s.estado === filtroEstado)
+    .filter(s => {
+      if (!filtroBuscar) return true
+      const q = filtroBuscar.toLowerCase()
+      return (
+        (s.estudiante || '').toLowerCase().includes(q) ||
+        (s.sede || '').toLowerCase().includes(q) ||
+        (s.grado || '').toLowerCase().includes(q)
+      )
+    })
 
   function abrirEditar(s) {
     setEditando(s.id)
@@ -77,10 +97,18 @@ export default function Seguimientos() {
     completado: seguimientos.filter(s => s.estado === 'completado').length,
   }
 
+  // Agrupar por sede para vista de rector
+  const esRector = ['rector', 'admin', 'coordinador'].includes(usuario.rol)
+
   return (
     <div className="space-y-5 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-800">📋 Seguimientos</h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">📋 Seguimientos</h1>
+          {esRector && (
+            <p className="text-xs text-gray-400 mt-0.5">Vista institucional · Todos los docentes</p>
+          )}
+        </div>
         <span className="text-sm text-gray-400">{filtrados.length} registros</span>
       </div>
 
@@ -102,21 +130,30 @@ export default function Seguimientos() {
         ))}
       </div>
 
-      {/* Filtro */}
-      <div className="flex gap-2 flex-wrap">
-        {['pendiente', 'en_proceso', 'completado', 'todos'].map(e => (
-          <button
-            key={e}
-            onClick={() => setFiltroEstado(e)}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-              filtroEstado === e
-                ? 'bg-verde text-white border-verde'
-                : 'border-gray-200 text-gray-500 hover:border-verde hover:text-verde'
-            }`}
-          >
-            {e === 'todos' ? 'Todos' : ESTADO_LABELS[e]}
-          </button>
-        ))}
+      {/* Filtros */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <div className="flex gap-2 flex-wrap">
+          {['pendiente', 'en_proceso', 'completado', 'todos'].map(e => (
+            <button
+              key={e}
+              onClick={() => setFiltroEstado(e)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                filtroEstado === e
+                  ? 'bg-verde text-white border-verde'
+                  : 'border-gray-200 text-gray-500 hover:border-verde hover:text-verde'
+              }`}
+            >
+              {e === 'todos' ? 'Todos' : ESTADO_LABELS[e]}
+            </button>
+          ))}
+        </div>
+        <input
+          type="text"
+          placeholder="Filtrar por nombre, sede o grado..."
+          value={filtroBuscar}
+          onChange={e => setFiltroBuscar(e.target.value)}
+          className="flex-1 min-w-[180px] border-2 border-gray-200 rounded-full px-3 py-1 text-xs focus:border-verde focus:outline-none"
+        />
       </div>
 
       {/* Lista */}
@@ -135,15 +172,40 @@ export default function Seguimientos() {
             >
               {/* Cabecera del seguimiento */}
               <div
-                className="flex items-center justify-between p-4 cursor-pointer"
+                className="flex items-start justify-between p-4 cursor-pointer gap-3"
                 onClick={() => setExpandido(expandido === s.id ? null : s.id)}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm text-gray-800 truncate">{s.estudiante}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{s.sede} · {s.grado}</div>
-                  <div className="text-xs font-semibold mt-1">{PROTOCOLO_LABELS[s.tipo_accion] || s.tipo_accion}</div>
+                  {/* Nombre del estudiante - protagonista */}
+                  <div className="font-bold text-base text-gray-800 leading-tight">
+                    {s.estudiante || <span className="text-gray-400 italic">Estudiante no cargado</span>}
+                  </div>
+
+                  {/* Sede · Grado */}
+                  <div className="flex flex-wrap gap-x-2 text-xs text-gray-500 mt-0.5">
+                    {s.sede && <span>📍 {s.sede}</span>}
+                    {s.grado && <span>📚 {s.grado}</span>}
+                  </div>
+
+                  {/* Tipo de acción */}
+                  <div className="text-xs font-semibold mt-1.5">
+                    {PROTOCOLO_LABELS[s.tipo_accion] || s.tipo_accion}
+                  </div>
+
+                  {/* Tipo de falta y docente (vista rector) */}
+                  {esRector && (
+                    <div className="flex flex-wrap gap-x-3 text-xs text-gray-400 mt-1">
+                      {s.anotacion_tipo && (
+                        <span>📄 {TIPO_FALTA_LABELS[s.anotacion_tipo] || s.anotacion_tipo}</span>
+                      )}
+                      {s.creado_por_nombre && (
+                        <span>👤 {s.creado_por_nombre}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 ml-3 shrink-0">
+
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${ESTADO_COLORS[s.estado]}`}>
                     {ESTADO_LABELS[s.estado]}
                   </span>
@@ -151,7 +213,7 @@ export default function Seguimientos() {
                     onClick={e => { e.stopPropagation(); navigate(`/estudiantes/${s.estudiante_id}`) }}
                     className="text-xs text-verde hover:underline font-semibold"
                   >
-                    Ver ficha
+                    Ver ficha →
                   </button>
                   <span className="text-gray-400 text-xs">{expandido === s.id ? '▲' : '▼'}</span>
                 </div>
@@ -160,30 +222,42 @@ export default function Seguimientos() {
               {/* Detalle expandido */}
               {expandido === s.id && (
                 <div className="border-t border-black/5 p-4 bg-white/70 space-y-3">
-                  <div className="text-xs text-gray-400">
-                    Apertura: {new Date(s.fecha_apertura).toLocaleDateString('es-CO')}
-                    {s.fecha_cierre && ` · Cierre: ${new Date(s.fecha_cierre).toLocaleDateString('es-CO')}`}
+                  {/* Fecha y docente */}
+                  <div className="flex flex-wrap gap-x-4 text-xs text-gray-400">
+                    <span>📅 Apertura: {new Date(s.fecha_apertura).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                    {s.fecha_cierre && (
+                      <span>✅ Cierre: {new Date(s.fecha_cierre).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                    )}
+                    {s.creado_por_nombre && <span>👤 Reportado por: {s.creado_por_nombre}</span>}
                   </div>
+
+                  {/* Descripción original de la anotación */}
+                  {s.anotacion_descripcion && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <div className="text-xs font-semibold text-gray-500 mb-1">📝 Descripción de la situación:</div>
+                      <p className="text-sm text-gray-700 line-clamp-3">{s.anotacion_descripcion}</p>
+                    </div>
+                  )}
 
                   {editando === s.id ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="text-xs font-semibold text-gray-600 mb-1 block">Estado</label>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">Estado del seguimiento</label>
                         <select
                           value={editForm.estado}
                           onChange={e => setEditForm({ ...editForm, estado: e.target.value })}
                           className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-verde focus:outline-none"
                         >
-                          <option value="pendiente">Pendiente</option>
-                          <option value="en_proceso">En proceso</option>
-                          <option value="completado">Completado</option>
+                          <option value="pendiente">⏳ Pendiente</option>
+                          <option value="en_proceso">🔄 En proceso</option>
+                          <option value="completado">✅ Completado</option>
                         </select>
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">Observaciones</label>
                         <textarea
-                          rows={2}
-                          placeholder="Qué acciones se han tomado..."
+                          rows={3}
+                          placeholder="¿Qué acciones se han tomado? ¿Cómo va el proceso?"
                           value={editForm.observaciones}
                           onChange={e => setEditForm({ ...editForm, observaciones: e.target.value })}
                           className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-verde focus:outline-none resize-none"
@@ -192,8 +266,8 @@ export default function Seguimientos() {
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">Compromisos</label>
                         <textarea
-                          rows={2}
-                          placeholder="Compromisos asumidos por el estudiante o acudiente..."
+                          rows={3}
+                          placeholder="¿Qué compromisos asumieron el estudiante y/o acudiente?"
                           value={editForm.compromisos}
                           onChange={e => setEditForm({ ...editForm, compromisos: e.target.value })}
                           className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-verde focus:outline-none resize-none"
@@ -205,7 +279,7 @@ export default function Seguimientos() {
                           disabled={saving}
                           className="btn-primary text-sm"
                         >
-                          {saving ? 'Guardando...' : 'Guardar cambios'}
+                          {saving ? 'Guardando...' : '💾 Guardar cambios'}
                         </button>
                         <button
                           onClick={() => setEditando(null)}
@@ -219,18 +293,18 @@ export default function Seguimientos() {
                     <div className="space-y-2">
                       {s.observaciones && (
                         <div>
-                          <div className="text-xs font-semibold text-gray-500">Observaciones:</div>
-                          <p className="text-sm text-gray-700">{s.observaciones}</p>
+                          <div className="text-xs font-semibold text-gray-500">📋 Observaciones:</div>
+                          <p className="text-sm text-gray-700 mt-0.5">{s.observaciones}</p>
                         </div>
                       )}
                       {s.compromisos && (
                         <div>
-                          <div className="text-xs font-semibold text-gray-500">Compromisos:</div>
-                          <p className="text-sm text-gray-700">{s.compromisos}</p>
+                          <div className="text-xs font-semibold text-gray-500">🤝 Compromisos:</div>
+                          <p className="text-sm text-gray-700 mt-0.5">{s.compromisos}</p>
                         </div>
                       )}
                       {!s.observaciones && !s.compromisos && (
-                        <p className="text-xs text-gray-400 italic">Sin observaciones registradas.</p>
+                        <p className="text-xs text-gray-400 italic">Sin observaciones registradas aún.</p>
                       )}
                       <button
                         onClick={() => abrirEditar(s)}

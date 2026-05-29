@@ -7,6 +7,7 @@ import NuevaAnotacion from './pages/NuevaAnotacion'
 import Seguimientos from './pages/Seguimientos'
 import Reportes from './pages/Reportes'
 import GestionDocentes from './pages/GestionDocentes'
+import ConductoRegular from './pages/ConductoRegular'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }) {
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="seguimientos" element={<Seguimientos />} />
           <Route path="reportes" element={<Reportes />} />
           <Route path="docentes" element={<GestionDocentes />} />
+          <Route path="conducto-regular" element={<ConductoRegular />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

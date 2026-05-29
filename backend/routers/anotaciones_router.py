@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from database import get_db
 import models
 from auth import get_usuario_actual, requerir_docente
@@ -126,12 +126,40 @@ def marcar_notificado(
 # ── SEGUIMIENTOS ──────────────────────────────────────
 @router.get("/seguimientos/pendientes", response_model=List[SeguimientoOut])
 def seguimientos_pendientes(db: Session = Depends(get_db), _=Depends(get_usuario_actual)):
-    return (
+    seguimientos = (
         db.query(models.Seguimiento)
+        .options(
+            joinedload(models.Seguimiento.estudiante),
+            joinedload(models.Seguimiento.creado_por),
+            joinedload(models.Seguimiento.anotacion),
+        )
         .filter(models.Seguimiento.estado.in_(["pendiente", "en_proceso"]))
         .order_by(models.Seguimiento.fecha_apertura.desc())
         .all()
     )
+    result = []
+    for s in seguimientos:
+        est = s.estudiante
+        creador = s.creado_por
+        anot = s.anotacion
+        result.append(SeguimientoOut(
+            id=s.id,
+            estudiante_id=s.estudiante_id,
+            anotacion_id=s.anotacion_id,
+            tipo_accion=s.tipo_accion,
+            estado=s.estado,
+            observaciones=s.observaciones,
+            compromisos=s.compromisos,
+            fecha_apertura=s.fecha_apertura,
+            fecha_cierre=s.fecha_cierre,
+            estudiante=f"{est.nombres} {est.apellidos}" if est else None,
+            sede=est.sede if est else None,
+            grado=est.grado if est else None,
+            creado_por_nombre=f"{creador.nombres} {creador.apellidos}" if creador else None,
+            anotacion_descripcion=anot.descripcion if anot else None,
+            anotacion_tipo=anot.tipo_falta if anot else None,
+        ))
+    return result
 
 
 @router.put("/seguimientos/{seg_id}")

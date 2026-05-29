@@ -66,7 +66,7 @@ def get_usuario_actual(token: str = Depends(oauth2_scheme), db: Session = Depend
 
 
 def requerir_docente(usuario=Depends(get_usuario_actual)):
-    if usuario.rol not in ["docente", "coordinador", "admin"]:
+    if usuario.rol not in ["docente", "coordinador", "admin", "rector"]:
         raise HTTPException(status_code=403, detail="Se requiere rol de docente o superior")
     return usuario
 

@@ -2,11 +2,12 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
 const nav = [
-  { to: '/',             label: 'Dashboard',    icon: '📊' },
-  { to: '/estudiantes',  label: 'Estudiantes',  icon: '🎒' },
-  { to: '/seguimientos', label: 'Seguimientos', icon: '📋' },
-  { to: '/reportes',     label: 'Reportes',     icon: '📈' },
-  { to: '/docentes',     label: 'Docentes',     icon: '👩‍🏫', rol: ['admin', 'coordinador'] },
+  { to: '/',                  label: 'Dashboard',    icon: '📊' },
+  { to: '/estudiantes',       label: 'Estudiantes',  icon: '🎒' },
+  { to: '/seguimientos',      label: 'Seguimientos', icon: '📋' },
+  { to: '/conducto-regular',  label: 'Protocolo',    icon: '⚖️' },
+  { to: '/reportes',          label: 'Reportes',     icon: '📈' },
+  { to: '/docentes',          label: 'Docentes',     icon: '👩‍🏫', rol: ['admin', 'coordinador', 'rector'] },
 ]
 
 export default function Layout() {

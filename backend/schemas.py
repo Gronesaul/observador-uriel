@@ -59,6 +59,19 @@ class EstudianteOut(BaseModel):
         from_attributes = True
 
 
+class EstudianteCreate(BaseModel):
+    nombres: str
+    apellidos: str
+    documento: str
+    sede: str
+    grado: Optional[str] = None
+    grupo: Optional[str] = None
+    edad: Optional[int] = None
+    genero: Optional[str] = None
+    nombre_acudiente: Optional[str] = None
+    telefono_acudiente: Optional[str] = None
+
+
 class EstudianteUpdate(BaseModel):
     nombre_acudiente: Optional[str] = None
     telefono_acudiente: Optional[str] = None
@@ -121,6 +134,13 @@ class SeguimientoOut(BaseModel):
     compromisos: Optional[str]
     fecha_apertura: datetime
     fecha_cierre: Optional[datetime]
+    # Campos enriquecidos (del estudiante y docente relacionados)
+    estudiante: Optional[str] = None          # Nombre completo del estudiante
+    sede: Optional[str] = None                # Sede del estudiante
+    grado: Optional[str] = None               # Grado del estudiante
+    creado_por_nombre: Optional[str] = None   # Nombre del docente que creó el seguimiento
+    anotacion_descripcion: Optional[str] = None  # Descripción breve de la anotación origen
+    anotacion_tipo: Optional[str] = None      # tipo_falta de la anotación origen
 
     class Config:
         from_attributes = True

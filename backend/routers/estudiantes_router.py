@@ -2,13 +2,44 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 import models
-from auth import get_usuario_actual
-from schemas import EstudianteOut, EstudianteUpdate, FichaEstudianteOut, AnotacionOut, SeguimientoOut
+from auth import get_usuario_actual, requerir_docente
+from schemas import EstudianteOut, EstudianteCreate, EstudianteUpdate, FichaEstudianteOut, AnotacionOut, SeguimientoOut
 from protocolo import calcular_protocolo, generar_mensaje_whatsapp
 from typing import List, Optional
 from datetime import datetime
 
 router = APIRouter(prefix="/api/estudiantes", tags=["estudiantes"])
+
+
+@router.post("/", response_model=EstudianteOut, status_code=201)
+def crear_estudiante(
+    data: EstudianteCreate,
+    db: Session = Depends(get_db),
+    usuario=Depends(requerir_docente)
+):
+    """Crea un nuevo estudiante. Requiere rol docente, coordinador, rector o admin."""
+    # Verificar que el documento no esté duplicado
+    existente = db.query(models.Estudiante).filter(models.Estudiante.documento == data.documento).first()
+    if existente:
+        raise HTTPException(status_code=400, detail="Ya existe un estudiante con ese número de documento")
+
+    nuevo = models.Estudiante(
+        nombres=data.nombres,
+        apellidos=data.apellidos,
+        documento=data.documento,
+        sede=data.sede,
+        grado=data.grado,
+        grupo=data.grupo,
+        edad=data.edad,
+        genero=data.genero,
+        nombre_acudiente=data.nombre_acudiente,
+        telefono_acudiente=data.telefono_acudiente,
+        activo=True,
+    )
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+    return nuevo
 
 
 @router.get("/", response_model=List[EstudianteOut])

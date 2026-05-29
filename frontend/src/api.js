@@ -37,6 +37,7 @@ export const getMe = () => api.get('/api/auth/me')
 // ── ESTUDIANTES ───────────────────────────────────────
 export const getEstudiantes = (params) => api.get('/api/estudiantes/', { params })
 export const getFicha = (id) => api.get(`/api/estudiantes/${id}`)
+export const crearEstudiante = (data) => api.post('/api/estudiantes/', data)
 export const updateAcudiente = (id, data) => api.put(`/api/estudiantes/${id}/acudiente`, data)
 export const getSedes = () => api.get('/api/estudiantes/sedes')
 export const getGrados = () => api.get('/api/estudiantes/grados')
