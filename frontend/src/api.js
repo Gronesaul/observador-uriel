@@ -34,6 +34,11 @@ export const login = (documento, contrasena) =>
 
 export const getMe = () => api.get('/api/auth/me')
 
+// Activación de cuenta (autoservicio del docente)
+export const getSedesPendientes = () => api.get('/api/auth/sedes-pendientes')
+export const getPendientesPorSede = (sede) => api.get('/api/auth/pendientes', { params: { sede } })
+export const activarCuenta = (data) => api.post('/api/auth/activar', data)
+
 // ── ESTUDIANTES ───────────────────────────────────────
 export const getEstudiantes = (params) => api.get('/api/estudiantes/', { params })
 export const getFicha = (id) => api.get(`/api/estudiantes/${id}`)
@@ -52,6 +57,9 @@ export const updateSeguimiento = (id, data) => api.put(`/api/anotaciones/seguimi
 
 // ── DOCENTES ──────────────────────────────────────────
 export const getDocentes = () => api.get('/api/docentes/')
+export const getDocentesPendientes = () => api.get('/api/docentes/pendientes')
+export const crearDocentePendiente = (data) => api.post('/api/docentes/pendientes', data)
+export const eliminarDocentePendiente = (id) => api.delete(`/api/docentes/pendientes/${id}`)
 export const crearDocente = (data) => api.post('/api/docentes/', data)
 
 // ── REPORTES ──────────────────────────────────────────

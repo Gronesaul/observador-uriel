@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import {
   getDocentes, crearDocente, getAsignaciones, crearAsignacion, eliminarAsignacion,
-  getSedes, getGrados,
+  getSedes, getGrados, getDocentesPendientes, crearDocentePendiente, eliminarDocentePendiente,
 } from '../api'
 
 const SEDES = [
+  'Aposentos',
   'Guadualito',
   'Centro',
   'El Turmal',
@@ -59,6 +60,12 @@ export default function GestionDocentes() {
   const [errorAsig, setErrorAsig] = useState('')
   const [guardandoAsig, setGuardandoAsig] = useState(false)
 
+  // Precarga de nombres — el docente activa su propia cuenta con PIN
+  const [pendientes, setPendientes] = useState([])
+  const [formPend, setFormPend] = useState({ nombres: '', apellidos: '', sede: '', rol: 'docente' })
+  const [errorPend, setErrorPend] = useState('')
+  const [guardandoPend, setGuardandoPend] = useState(false)
+
   async function cargar() {
     setLoading(true)
     try {
@@ -75,14 +82,48 @@ export default function GestionDocentes() {
     } catch (e) { console.error(e) }
   }
 
+  async function cargarPendientes() {
+    try {
+      const { data } = await getDocentesPendientes()
+      setPendientes(data)
+    } catch (e) { console.error(e) }
+  }
+
   useEffect(() => {
     cargar()
     if (esSuperior) {
       cargarAsignaciones()
+      cargarPendientes()
       getSedes().then(r => setSedesEst(r.data)).catch(console.error)
       getGrados().then(r => setGradosEst(r.data)).catch(console.error)
     }
   }, [])
+
+  async function handleCrearPendiente(e) {
+    e.preventDefault()
+    setErrorPend('')
+    if (!formPend.nombres.trim() || !formPend.apellidos.trim() || !formPend.sede) {
+      setErrorPend('Nombres, apellidos y sede son obligatorios.')
+      return
+    }
+    setGuardandoPend(true)
+    try {
+      await crearDocentePendiente(formPend)
+      setFormPend({ nombres: '', apellidos: '', sede: '', rol: 'docente' })
+      cargarPendientes()
+    } catch (err) {
+      setErrorPend(err.response?.data?.detail || 'No se pudo precargar el nombre.')
+    } finally {
+      setGuardandoPend(false)
+    }
+  }
+
+  async function handleEliminarPendiente(id) {
+    try {
+      await eliminarDocentePendiente(id)
+      cargarPendientes()
+    } catch (e) { console.error(e) }
+  }
 
   async function handleCrearAsignacion(e) {
     e.preventDefault()
@@ -340,6 +381,76 @@ export default function GestionDocentes() {
           </div>
         )}
       </div>
+
+      {/* Precarga de nombres — autoactivación por PIN — solo rector/admin */}
+      {esSuperior && (
+        <div className="pt-2 border-t border-gray-200">
+          <h2 className="font-bold text-gray-700 text-base mt-4 mb-1">🪪 Precargar Docentes (activación con PIN)</h2>
+          <p className="text-xs text-gray-400 mb-3">
+            Carga solo el nombre y la sede. El docente entra a la pantalla de login, elige su nombre,
+            pone su cédula y crea su propio PIN — no necesitas asignarle contraseña tú.
+          </p>
+
+          <div className="card mb-3">
+            <form onSubmit={handleCrearPendiente} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+              <input
+                type="text" placeholder="Nombres" value={formPend.nombres}
+                onChange={e => setFormPend({ ...formPend, nombres: e.target.value })}
+                className="border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+              />
+              <input
+                type="text" placeholder="Apellidos" value={formPend.apellidos}
+                onChange={e => setFormPend({ ...formPend, apellidos: e.target.value })}
+                className="border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+              />
+              <select
+                value={formPend.sede}
+                onChange={e => setFormPend({ ...formPend, sede: e.target.value })}
+                className="border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+              >
+                <option value="">Sede…</option>
+                {SEDES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select
+                value={formPend.rol}
+                onChange={e => setFormPend({ ...formPend, rol: e.target.value })}
+                className="border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+              >
+                <option value="docente">Docente</option>
+                <option value="coordinador">Coordinador / Secretaría</option>
+                <option value="admin">Admin / Rector</option>
+              </select>
+              <button type="submit" disabled={guardandoPend} className="btn-primary text-sm md:col-span-4 w-fit">
+                {guardandoPend ? 'Guardando...' : '➕ Precargar nombre'}
+              </button>
+            </form>
+            {errorPend && <p className="text-red-500 text-xs mt-2">{errorPend}</p>}
+          </div>
+
+          {pendientes.length === 0 ? (
+            <div className="card text-center text-gray-400 py-6 text-sm">
+              Sin nombres pendientes de activación.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {pendientes.map(p => (
+                <div key={p.id} className="card flex items-center justify-between text-sm py-3">
+                  <div>
+                    <span className="font-semibold text-gray-700">{p.nombres} {p.apellidos}</span>
+                    <span className="text-gray-400"> — {p.sede} · {ROL_LABELS[p.rol] || p.rol}</span>
+                    <span className="ml-2 text-xs text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full">
+                      Pendiente de activar
+                    </span>
+                  </div>
+                  <button onClick={() => handleEliminarPendiente(p.id)} className="text-red-500 text-xs hover:underline">
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Asignación de grupos — solo rector/admin */}
       {esSuperior && (

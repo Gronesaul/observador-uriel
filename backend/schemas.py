@@ -30,14 +30,29 @@ class UsuarioOut(BaseModel):
     id: int
     nombres: str
     apellidos: str
-    documento: str
+    documento: Optional[str] = None
     email: Optional[str]
     rol: str
     sede: Optional[str]
     activo: bool
+    pendiente_activacion: bool = False
 
     class Config:
         from_attributes = True
+
+
+class DocentePendienteCreate(BaseModel):
+    """Rector/admin precarga el nombre; el docente activa su propia cuenta después."""
+    nombres: str
+    apellidos: str
+    sede: str
+    rol: str = "docente"
+
+
+class ActivarCuentaRequest(BaseModel):
+    usuario_id: int
+    documento: str
+    pin: str
 
 
 # ── ESTUDIANTE ────────────────────────────────────────

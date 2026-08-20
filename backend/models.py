@@ -11,12 +11,12 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombres = Column(String, nullable=False)
     apellidos = Column(String, nullable=False)
-    documento = Column(String, unique=True, index=True, nullable=False)
+    documento = Column(String, unique=True, index=True, nullable=True)   # null mientras está pendiente de activar
     email = Column(String, nullable=True)
-    contrasena_hash = Column(String, nullable=False)
+    contrasena_hash = Column(String, nullable=True)  # null mientras está pendiente de activar (el docente crea su PIN)
     rol = Column(String, default="docente")       # "docente" | "coordinador" | "admin"
     sede = Column(String, nullable=True)           # Sede asignada del docente
-    activo = Column(Boolean, default=True)
+    activo = Column(Boolean, default=True)         # false = cuenta pendiente de activación
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     anotaciones = relationship("Anotacion", back_populates="docente")
