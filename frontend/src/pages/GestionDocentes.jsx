@@ -4,19 +4,20 @@ import {
   getSedes, getGrados, getDocentesPendientes, crearDocentePendiente, eliminarDocentePendiente,
 } from '../api'
 
+// Sedes reales según "PLANO MATRICULA JULIO 22 DE 2026.xls" — secundaria, mixta
+// y las 8 escuelas rurales de primaria. Usar estos mismos nombres al precargar
+// docentes para que la pantalla de activación agrupe bien por sede.
 const SEDES = [
-  'Aposentos',
-  'Guadualito',
-  'Centro',
-  'El Turmal',
-  'La Cañada',
-  'La Palma',
-  'La Pradera',
-  'Las Malvinas',
-  'Los Alpes',
-  'Molinos',
-  'San Isidro',
-  'Santa Helena',
+  'I.E.D. Uriel Murcia (sede central, Aposentos)',
+  'I.E. Post-Primaria Rural Guadualito',
+  'Escuela Rural Yasal Alto',
+  'Escuela Rural Los Ángeles de Aposentos',
+  'Escuela Rural El Lamal',
+  'Escuela Rural El Chapón',
+  'Escuela Rural El Banco',
+  'Escuela Rural Cabo Verde',
+  'Escuela Rural Pasurcha',
+  'Escuela Rural Yasal Bajo',
 ]
 
 const ROL_LABELS = {

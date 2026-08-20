@@ -1,0 +1,11 @@
+_to_delete/
+*.xls
+*.xlsx
+*.docx
+~$*
+~WRL*.tmp
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.env
