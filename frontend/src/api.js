@@ -61,6 +61,9 @@ export const getDocentesPendientes = () => api.get('/api/docentes/pendientes')
 export const crearDocentePendiente = (data) => api.post('/api/docentes/pendientes', data)
 export const eliminarDocentePendiente = (id) => api.delete(`/api/docentes/pendientes/${id}`)
 export const crearDocente = (data) => api.post('/api/docentes/', data)
+export const desactivarDocente = (id) => api.put(`/api/docentes/${id}/desactivar`)
+export const resetClaveDocente = (id, nueva_clave) =>
+  api.put(`/api/docentes/${id}/reset-clave`, null, { params: { nueva_clave } })
 
 // ── REPORTES ──────────────────────────────────────────
 export const getResumen = () => api.get('/api/reportes/resumen')

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   getDocentes, crearDocente, getAsignaciones, crearAsignacion, eliminarAsignacion,
   getSedes, getGrados, getDocentesPendientes, crearDocentePendiente, eliminarDocentePendiente,
+  desactivarDocente, resetClaveDocente,
 } from '../api'
 
 // Sedes reales según "PLANO MATRICULA JULIO 22 DE 2026.xls" — secundaria, mixta
@@ -155,6 +156,28 @@ export default function GestionDocentes() {
       await eliminarAsignacion(id)
       cargarAsignaciones()
     } catch (e) { console.error(e) }
+  }
+
+  async function handleDesactivar(d) {
+    if (!confirm(`¿Desactivar a ${d.nombres} ${d.apellidos}? No podrá iniciar sesión hasta que lo reactives.`)) return
+    try {
+      await desactivarDocente(d.id)
+      cargar()
+    } catch (err) {
+      alert(err.response?.data?.detail || 'No se pudo desactivar.')
+    }
+  }
+
+  async function handleCambiarClave(d) {
+    const nueva = prompt(`Nueva contraseña/PIN para ${d.nombres} ${d.apellidos} (mínimo 4 caracteres):`)
+    if (!nueva) return
+    if (nueva.length < 4) { alert('Debe tener al menos 4 caracteres.'); return }
+    try {
+      await resetClaveDocente(d.id, nueva)
+      alert('Contraseña actualizada. Avísale al docente su nueva clave.')
+    } catch (err) {
+      alert(err.response?.data?.detail || 'No se pudo cambiar la contraseña.')
+    }
   }
 
   function validar() {
@@ -376,6 +399,18 @@ export default function GestionDocentes() {
                     )}
                   </div>
                   {d.email && <div className="text-xs text-gray-400 mt-0.5 truncate">✉️ {d.email}</div>}
+                  {esSuperior && (
+                    <div className="flex items-center gap-3 mt-2">
+                      <button onClick={() => handleCambiarClave(d)} className="text-xs text-verde hover:underline">
+                        🔑 Cambiar clave
+                      </button>
+                      {d.activo !== false && (
+                        <button onClick={() => handleDesactivar(d)} className="text-xs text-red-500 hover:underline">
+                          🚫 Desactivar
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
