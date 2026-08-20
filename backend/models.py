@@ -71,8 +71,9 @@ class Anotacion(Base):
 
     # Tipo de registro
     tipo_registro = Column(String, default="situacion", nullable=True)
-    # "situacion" → Situación Tipo I/II/III (Decreto 1965/2013)
-    # "falta"     → Falta al Manual de Convivencia (proceso disciplinario interno)
+    # "situacion"      → Situación Tipo I/II/III (Decreto 1965/2013)
+    # "falta"          → Falta al Manual de Convivencia (proceso disciplinario interno)
+    # "reconocimiento" → Reconocimiento/felicitación — registro positivo, sin proceso disciplinario
 
     # Clasificación
     tipo_falta = Column(String, nullable=False)
@@ -85,6 +86,7 @@ class Anotacion(Base):
     # "academica"   → compromiso/rendimiento académico
 
     descripcion = Column(Text, nullable=False)
+    version_estudiante = Column(Text, nullable=True)  # "la otra versión" — lo que dice el estudiante que pasó
     acciones_inmediatas = Column(Text, nullable=True)
     sede_origen = Column(String, nullable=True)
 

@@ -54,6 +54,7 @@ def crear_anotacion(
         tipo_falta=data.tipo_falta,
         categoria=data.categoria,
         descripcion=data.descripcion,
+        version_estudiante=getattr(data, "version_estudiante", None),
         acciones_inmediatas=data.acciones_inmediatas,
         sede_origen=usuario.sede,
         protocolo_sugerido=protocolo["codigo"],
@@ -62,15 +63,16 @@ def crear_anotacion(
     db.add(anotacion)
     db.flush()
 
-    # Crear seguimiento automático
-    seguimiento = models.Seguimiento(
-        estudiante_id=data.estudiante_id,
-        anotacion_id=anotacion.id,
-        tipo_accion=protocolo["codigo"],
-        estado="pendiente",
-        creado_por_id=usuario.id,
-    )
-    db.add(seguimiento)
+    # Crear seguimiento automático — un reconocimiento no abre proceso, no necesita seguimiento
+    if tipo_registro != "reconocimiento":
+        seguimiento = models.Seguimiento(
+            estudiante_id=data.estudiante_id,
+            anotacion_id=anotacion.id,
+            tipo_accion=protocolo["codigo"],
+            estado="pendiente",
+            creado_por_id=usuario.id,
+        )
+        db.add(seguimiento)
     db.commit()
     db.refresh(anotacion)
 
@@ -99,6 +101,7 @@ def crear_anotacion(
         tipo_falta=anotacion.tipo_falta,
         categoria=anotacion.categoria,
         descripcion=anotacion.descripcion,
+        version_estudiante=anotacion.version_estudiante,
         acciones_inmediatas=anotacion.acciones_inmediatas,
         sede_origen=anotacion.sede_origen,
         fecha_anotacion=anotacion.fecha_anotacion,

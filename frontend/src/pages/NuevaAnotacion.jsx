@@ -116,6 +116,26 @@ const FALTAS = {
   },
 }
 
+const RECONOCIMIENTOS = {
+  reconocimiento: {
+    label: 'Reconocimiento',
+    badge: '🌟 Reconocimiento',
+    desc: 'Un logro, actitud o mejora que vale la pena destacar y comunicar a la familia.',
+    color: 'border-green-400 bg-green-50',
+    badgeColor: 'bg-green-100 text-green-700',
+    categorias: [
+      'Excelencia académica',
+      'Mejora notable en el desempeño',
+      'Liderazgo positivo',
+      'Compañerismo y solidaridad',
+      'Buen comportamiento sostenido',
+      'Representación destacada del colegio (deportiva, cultural, académica)',
+      'Superación personal',
+      'Otro reconocimiento',
+    ],
+  },
+}
+
 const PROTO_LABELS = {
   llamado_atencion:     '🟡 Llamado de Atención',
   citacion_padres:      '🟠 Citación al Acudiente',
@@ -126,6 +146,7 @@ const PROTO_LABELS = {
   citacion_falta:       '🟠 Citación al Acudiente por Falta',
   proceso_disciplinario:'🔴 Proceso Disciplinario Interno',
   suspension_comite:    '🚨 Comité + Posible Matrícula Condicional',
+  reconocimiento:       '🌟 Reconocimiento / Felicitación',
 }
 
 const PROTO_COLORS = {
@@ -138,6 +159,7 @@ const PROTO_COLORS = {
   citacion_falta:       'bg-orange-50 border-orange-300 text-orange-800',
   proceso_disciplinario:'bg-red-50 border-red-300 text-red-800',
   suspension_comite:    'bg-red-100 border-red-500 text-red-900',
+  reconocimiento:       'bg-green-50 border-green-400 text-green-800',
 }
 
 // ── COMPONENTE ─────────────────────────────────────────────────────────
@@ -151,11 +173,12 @@ export default function NuevaAnotacion() {
   const [sending, setSending]       = useState(false)
   const [resultado, setResultado]   = useState(null)
 
-  const [tipoRegistro, setTipoRegistro] = useState('')   // "situacion" | "falta"
+  const [tipoRegistro, setTipoRegistro] = useState('')   // "situacion" | "falta" | "reconocimiento"
   const [area, setArea]                 = useState('convivencia')   // "convivencia" | "academica"
-  const [tipoFalta, setTipoFalta]       = useState('')   // tipo1/tipo2/tipo3 | leve/grave/gravisima
+  const [tipoFalta, setTipoFalta]       = useState('')   // tipo1/tipo2/tipo3 | leve/grave/gravisima | reconocimiento
   const [categoria, setCategoria]       = useState('')
   const [descripcion, setDescripcion]   = useState('')
+  const [versionEstudiante, setVersionEstudiante] = useState('')
   const [acciones, setAcciones]         = useState('')
   const [errors, setErrors]             = useState({})
 
@@ -191,6 +214,7 @@ export default function NuevaAnotacion() {
         tipo_falta: tipoFalta,
         categoria,
         descripcion,
+        version_estudiante: versionEstudiante || null,
         acciones_inmediatas: acciones,
       })
       setResultado(data)
@@ -206,6 +230,12 @@ export default function NuevaAnotacion() {
     }
   }
 
+  const trackData = tipoRegistro === 'situacion' ? SITUACIONES
+    : tipoRegistro === 'falta' ? FALTAS
+    : tipoRegistro === 'reconocimiento' ? RECONOCIMIENTOS
+    : null
+  const claseActual = trackData ? trackData[tipoFalta] : null
+
   if (loading) return <div className="flex items-center justify-center h-64 text-gray-400">Cargando...</div>
   if (!estudiante) return <div className="text-center text-red-500 py-12">Estudiante no encontrado.</div>
 
@@ -214,14 +244,16 @@ export default function NuevaAnotacion() {
     const proto = resultado.protocolo_sugerido
     return (
       <div className="max-w-lg mx-auto space-y-5">
-        <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-6 text-center">
-          <div className="text-4xl mb-2">✅</div>
-          <h2 className="font-bold text-green-800 text-lg">Registro guardado</h2>
+        <div className={`border-2 rounded-2xl p-6 text-center ${
+          tipoRegistro === 'reconocimiento' ? 'bg-green-50 border-green-400' : 'bg-green-50 border-green-400'
+        }`}>
+          <div className="text-4xl mb-2">{tipoRegistro === 'reconocimiento' ? '🌟' : '✅'}</div>
+          <h2 className="font-bold text-green-800 text-lg">
+            {tipoRegistro === 'reconocimiento' ? 'Reconocimiento guardado' : 'Registro guardado'}
+          </h2>
           <p className="text-green-700 text-sm mt-1">
             {estudiante.nombres} {estudiante.apellidos}
-            {tipoRegistro === 'falta'
-              ? ` · ${FALTAS[tipoFalta]?.badge}`
-              : ` · ${SITUACIONES[tipoFalta]?.badge}`}
+            {claseActual ? ` · ${claseActual.badge}` : ''}
           </p>
         </div>
 
@@ -266,9 +298,6 @@ export default function NuevaAnotacion() {
     )
   }
 
-  const trackData = tipoRegistro === 'situacion' ? SITUACIONES : tipoRegistro === 'falta' ? FALTAS : null
-  const claseActual = trackData ? trackData[tipoFalta] : null
-
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
@@ -293,7 +322,7 @@ export default function NuevaAnotacion() {
               <strong> Falta:</strong> incumplimiento de normas internas del Manual
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => { setTipoRegistro('situacion'); resetTipo() }}
@@ -322,6 +351,21 @@ export default function NuevaAnotacion() {
               <div className="text-xs text-gray-500 mt-1 leading-snug">
                 Incumplimiento de normas institucionales (uniforme, celular, tareas, etc.).
                 Proceso disciplinario interno.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTipoRegistro('reconocimiento'); setTipoFalta('reconocimiento'); setCategoria('') }}
+              className={`text-left p-4 rounded-xl border-2 transition-all ${
+                tipoRegistro === 'reconocimiento'
+                  ? 'border-green-400 bg-green-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-bold text-sm">🌟 Reconocimiento</div>
+              <div className="text-xs text-gray-500 mt-1 leading-snug">
+                Destaca algo positivo: un logro, una mejora, una buena actitud.
+                No abre proceso disciplinario.
               </div>
             </button>
           </div>
@@ -355,8 +399,8 @@ export default function NuevaAnotacion() {
           </div>
         </div>
 
-        {/* PASO 2 — Clasificación */}
-        {tipoRegistro && (
+        {/* PASO 2 — Clasificación (no aplica a reconocimientos, no tienen gravedad) */}
+        {(tipoRegistro === 'situacion' || tipoRegistro === 'falta') && (
           <div className="card space-y-3">
             <label className="block font-bold text-gray-700">
               {tipoRegistro === 'situacion' ? 'Tipo de Situación *' : 'Gravedad de la Falta *'}
@@ -412,11 +456,15 @@ export default function NuevaAnotacion() {
         {tipoFalta && (
           <div className="card">
             <label className="block font-bold text-gray-700 text-sm mb-2">
-              Descripción de los hechos *
+              {tipoRegistro === 'reconocimiento' ? 'Describe el reconocimiento *' : 'Descripción de los hechos *'}
             </label>
             <textarea
               rows={4}
-              placeholder="Describe los hechos de forma objetiva: qué ocurrió, dónde, cuándo y quiénes estuvieron involucrados..."
+              placeholder={
+                tipoRegistro === 'reconocimiento'
+                  ? 'Cuenta qué hizo el estudiante que quieres destacar: qué pasó, dónde, cuándo...'
+                  : 'Describe los hechos de forma objetiva: qué ocurrió, dónde, cuándo y quiénes estuvieron involucrados...'
+              }
               value={descripcion}
               onChange={e => setDescripcion(e.target.value)}
               className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-verde focus:outline-none resize-none"
@@ -431,20 +479,42 @@ export default function NuevaAnotacion() {
           </div>
         )}
 
+        {/* PASO 4.5 — Versión del estudiante (solo situaciones/faltas: la otra parte de la historia) */}
+        {(tipoRegistro === 'situacion' || tipoRegistro === 'falta') && tipoFalta && (
+          <div className="card">
+            <label className="block font-bold text-gray-700 text-sm mb-1">
+              Versión del estudiante <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              Qué dice el estudiante que pasó, en sus palabras — para dejar registradas las dos versiones.
+            </p>
+            <textarea
+              rows={3}
+              placeholder="¿Qué explicó el estudiante sobre lo ocurrido?"
+              value={versionEstudiante}
+              onChange={e => setVersionEstudiante(e.target.value)}
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-verde focus:outline-none resize-none"
+            />
+          </div>
+        )}
+
         {/* PASO 5 — Acciones inmediatas */}
         {tipoFalta && (
           <div className="card">
             <label className="block font-bold text-gray-700 text-sm mb-1">
-              Acciones inmediatas tomadas <span className="text-gray-400 font-normal">(opcional)</span>
+              {tipoRegistro === 'reconocimiento' ? 'Cómo se reconoció' : 'Acciones inmediatas tomadas'}{' '}
+              <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
             <p className="text-xs text-gray-400 mb-2">
               {tipoRegistro === 'situacion'
                 ? 'Ej: Separé a los involucrados, diálogo de mediación, llamado de atención verbal...'
-                : 'Ej: Le pedí que se cambiara el uniforme, diálogo sobre la norma, le informé al director de grupo...'}
+                : tipoRegistro === 'falta'
+                ? 'Ej: Le pedí que se cambiara el uniforme, diálogo sobre la norma, le informé al director de grupo...'
+                : 'Ej: Lo felicité frente al grupo, lo mencioné en izada de bandera, le di un diploma...'}
             </p>
             <textarea
               rows={2}
-              placeholder="¿Qué acción tomaste en el momento?"
+              placeholder={tipoRegistro === 'reconocimiento' ? '¿Cómo se lo reconociste?' : '¿Qué acción tomaste en el momento?'}
               value={acciones}
               onChange={e => setAcciones(e.target.value)}
               className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-verde focus:outline-none resize-none"

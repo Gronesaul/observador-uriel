@@ -6,8 +6,16 @@ import {
 } from '../api'
 import { comprimirImagen } from '../utils/imagen'
 
-const TIPO_BADGE = { tipo1: '🟡 Tipo I', tipo2: '🟠 Tipo II', tipo3: '🔴 Tipo III' }
-const TIPO_CLASS = { tipo1: 'badge-tipo1', tipo2: 'badge-tipo2', tipo3: 'badge-tipo3' }
+const TIPO_BADGE = {
+  tipo1: '🟡 Tipo I', tipo2: '🟠 Tipo II', tipo3: '🔴 Tipo III',
+  leve: '🟡 Falta Leve', grave: '🟠 Falta Grave', gravisima: '🔴 Falta Gravísima',
+  reconocimiento: '🌟 Reconocimiento',
+}
+const TIPO_CLASS = {
+  tipo1: 'badge-tipo1', tipo2: 'badge-tipo2', tipo3: 'badge-tipo3',
+  leve: 'badge-tipo1', grave: 'badge-tipo2', gravisima: 'badge-tipo3',
+  reconocimiento: 'badge-reconocimiento',
+}
 const AREA_BADGE = {
   academica:  { texto: '📚 Académico', clase: 'bg-blue-100 text-blue-700' },
   convivencia:{ texto: '🤝 Convivencia', clase: 'bg-purple-100 text-purple-700' },
@@ -23,6 +31,7 @@ const PROTOCOLO_INFO = {
   citacion_falta:        { titulo: '🟠 Citación por Falta', bg: 'bg-orange-50 border-orange-300' },
   proceso_disciplinario:{ titulo: '🔴 Proceso Disciplinario', bg: 'bg-red-50 border-red-300' },
   suspension_comite:     { titulo: '🚨 Comité + Posible Matrícula Condicional', bg: 'bg-red-100 border-red-400' },
+  reconocimiento:        { titulo: '🌟 Reconocimiento / Felicitación', bg: 'bg-green-50 border-green-300' },
 }
 
 const GRADOS_ORDEN = ['GRADO 0', 'PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO',
@@ -344,20 +353,28 @@ export default function FichaEstudiante() {
         ) : (
           <div className="space-y-3">
             {anotaciones.map(a => (
-              <div key={a.id} className="card border-l-4 border-gray-200">
+              <div key={a.id} className={`card border-l-4 ${a.tipo_registro === 'reconocimiento' ? 'border-green-300' : 'border-gray-200'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className={TIPO_CLASS[a.tipo_falta]}>{TIPO_BADGE[a.tipo_falta]}</span>
-                      {a.area && (
+                      {a.area && a.tipo_registro !== 'reconocimiento' && (
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${AREA_BADGE[a.area]?.clase || 'bg-gray-100 text-gray-600'}`}>
                           {AREA_BADGE[a.area]?.texto || a.area}
                         </span>
                       )}
                       {a.categoria && <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{a.categoria}</span>}
                     </div>
-                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Descripción de los hechos</p>
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5">
+                      {a.tipo_registro === 'reconocimiento' ? 'Reconocimiento' : 'Descripción de los hechos'}
+                    </p>
                     <p className="text-sm text-gray-700">{a.descripcion}</p>
+                    {a.version_estudiante && (
+                      <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-2">
+                        <p className="text-xs text-blue-700 font-semibold uppercase tracking-wide mb-0.5">Versión del estudiante</p>
+                        <p className="text-sm text-blue-900">{a.version_estudiante}</p>
+                      </div>
+                    )}
                     {a.acciones_inmediatas && (
                       <p className="text-xs text-gray-500 mt-1">⚡ {a.acciones_inmediatas}</p>
                     )}
@@ -366,7 +383,7 @@ export default function FichaEstudiante() {
                       {a.docente ? `${a.docente.nombres} ${a.docente.apellidos}` : 'Docente'} ·{' '}
                       {a.sede_origen}
                     </div>
-                    {a.protocolo_sugerido && (
+                    {a.protocolo_sugerido && a.tipo_registro !== 'reconocimiento' && (
                       <div className="mt-2 text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-1 rounded-lg inline-block">
                         ⚖️ {PROTOCOLO_INFO[a.protocolo_sugerido]?.titulo || a.protocolo_sugerido}
                       </div>

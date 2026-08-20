@@ -26,6 +26,7 @@ def migrar_columnas():
             "ALTER TABLE anotaciones ADD COLUMN IF NOT EXISTS area VARCHAR DEFAULT 'convivencia'",
             "ALTER TABLE estudiantes ADD COLUMN IF NOT EXISTS foto_base64 TEXT",
             "ALTER TABLE estudiantes ADD COLUMN IF NOT EXISTS anio_ingreso INTEGER",
+            "ALTER TABLE anotaciones ADD COLUMN IF NOT EXISTS version_estudiante TEXT",
             "ALTER TABLE usuarios ALTER COLUMN documento DROP NOT NULL",
             "ALTER TABLE usuarios ALTER COLUMN contrasena_hash DROP NOT NULL",
         ]

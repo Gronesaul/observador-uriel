@@ -91,6 +91,16 @@ PROTOCOLOS = {
         "color": "rojo",
         "urgencia": 4,
     },
+    # ── TRACK RECONOCIMIENTOS ──────────────────────────────────────────
+    "reconocimiento": {
+        "codigo": "reconocimiento",
+        "titulo": "Reconocimiento / Felicitación",
+        "descripcion": "Reconocimiento positivo por parte de un docente. Se sugiere comunicarlo al acudiente y destacarlo frente al grupo o la institución.",
+        "responsable": "Docente",
+        "base_legal": "Manual de Convivencia IERD Uriel Murcia 2026 – Estímulos y Reconocimientos",
+        "color": "verde",
+        "urgencia": 0,
+    },
 }
 
 # ── CATEGORÍAS POR TRACK ──────────────────────────────────────────────
@@ -165,6 +175,17 @@ CATEGORIAS_FALTAS = {
     ],
 }
 
+CATEGORIAS_RECONOCIMIENTO = [
+    "Excelencia académica",
+    "Mejora notable en el desempeño",
+    "Liderazgo positivo",
+    "Compañerismo y solidaridad",
+    "Buen comportamiento sostenido",
+    "Representación destacada del colegio (deportiva, cultural, académica)",
+    "Superación personal",
+    "Otro reconocimiento",
+]
+
 
 def calcular_protocolo_situacion(tipo1: int, tipo2: int, tipo3: int, nueva_tipo: str) -> dict:
     """
@@ -219,6 +240,8 @@ def calcular_protocolo(tipo1: int, tipo2: int, tipo3: int, nueva_tipo: str,
     Punto de entrada unificado. Despacha al motor correcto según tipo_registro.
     Mantiene retrocompatibilidad con código existente (tipo_registro default = "situacion").
     """
+    if tipo_registro == "reconocimiento":
+        return PROTOCOLOS["reconocimiento"]
     if tipo_registro == "falta":
         return calcular_protocolo_falta(leves, graves, gravisimas, nueva_tipo)
     else:
@@ -238,6 +261,24 @@ def generar_mensaje_whatsapp(
     tipo_registro: str = "situacion",
 ) -> str:
     """Genera URL de WhatsApp con mensaje pre-escrito para el acudiente."""
+
+    if tipo_registro == "reconocimiento":
+        mensaje = (
+            f"Estimado/a {nombre_acudiente}, le contamos con alegría que su acudido/a "
+            f"*{nombre_estudiante}* recibió un reconocimiento en el colegio "
+            f"el día {fecha}. 🌟\n\n"
+            f"🏆 *Motivo:* {categoria}\n"
+            f"📝 *Detalle:* {descripcion}\n\n"
+            f"¡Felicitaciones! En el colegio también nos sentimos orgullosos.\n"
+            f"*IERD Uriel Murcia — Yacopí, Cundinamarca*\n"
+            f"📞 314 440 5106"
+        )
+        import urllib.parse
+        msg_encoded = urllib.parse.quote(mensaje)
+        tel_clean = telefono.replace("+", "").replace(" ", "").replace("-", "")
+        if not tel_clean.startswith("57"):
+            tel_clean = "57" + tel_clean
+        return f"https://wa.me/{tel_clean}?text={msg_encoded}"
 
     if tipo_registro == "falta":
         tipo_texto = {

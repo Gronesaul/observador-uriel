@@ -23,6 +23,7 @@ def alertas_activas(db: Session = Depends(get_db), _=Depends(get_usuario_actual)
             models.Anotacion.tipo_falta,
             func.count(models.Anotacion.id).label("total"),
         )
+        .filter(models.Anotacion.tipo_registro != "reconocimiento")
         .group_by(models.Anotacion.estudiante_id, models.Anotacion.tipo_falta)
         .having(func.count(models.Anotacion.id) >= UMBRAL_ALERTA)
         .all()
@@ -114,6 +115,7 @@ def top_estudiantes(limit: int = Query(10, le=50), db: Session = Depends(get_db)
             models.Anotacion.estudiante_id,
             func.count(models.Anotacion.id).label("total")
         )
+        .filter(models.Anotacion.tipo_registro != "reconocimiento")
         .group_by(models.Anotacion.estudiante_id)
         .order_by(func.count(models.Anotacion.id).desc())
         .limit(limit)

@@ -136,11 +136,12 @@ class AsignacionGrupoOut(BaseModel):
 # ── ANOTACION ─────────────────────────────────────────
 class AnotacionCreate(BaseModel):
     estudiante_id: int
-    tipo_registro: str = "situacion"  # "situacion" | "falta"
+    tipo_registro: str = "situacion"  # "situacion" | "falta" | "reconocimiento"
     area: str = "convivencia"         # "convivencia" | "academica"
-    tipo_falta: str        # situacion: "tipo1"|"tipo2"|"tipo3" / falta: "leve"|"grave"|"gravisima"
+    tipo_falta: str        # situacion: "tipo1"|"tipo2"|"tipo3" / falta: "leve"|"grave"|"gravisima" / reconocimiento: "reconocimiento"
     categoria: Optional[str] = None
     descripcion: str
+    version_estudiante: Optional[str] = None
     acciones_inmediatas: Optional[str] = None
 
 
@@ -153,6 +154,7 @@ class AnotacionOut(BaseModel):
     tipo_falta: str
     categoria: Optional[str]
     descripcion: str
+    version_estudiante: Optional[str] = None
     acciones_inmediatas: Optional[str]
     sede_origen: Optional[str]
     fecha_anotacion: datetime
