@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
@@ -9,6 +10,8 @@ from routers import (
     estudiantes_router,
     anotaciones_router,
     reportes_router,
+    grupos_router,
+    pdf_router,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -20,6 +23,9 @@ def migrar_columnas():
     with engine.connect() as conn:
         migraciones = [
             "ALTER TABLE anotaciones ADD COLUMN IF NOT EXISTS tipo_registro VARCHAR DEFAULT 'situacion'",
+            "ALTER TABLE anotaciones ADD COLUMN IF NOT EXISTS area VARCHAR DEFAULT 'convivencia'",
+            "ALTER TABLE estudiantes ADD COLUMN IF NOT EXISTS foto_base64 TEXT",
+            "ALTER TABLE estudiantes ADD COLUMN IF NOT EXISTS anio_ingreso INTEGER",
         ]
         for sql in migraciones:
             try:
@@ -210,21 +216,32 @@ migrar_columnas()
 crear_admin_inicial()
 importar_estudiantes_inicial()
 
+if os.getenv("SECRET_KEY") is None:
+    print(
+        "[ADVERTENCIA] SECRET_KEY no está configurada como variable de entorno. "
+        "El backend está usando el valor por defecto del código fuente, que ya no es secreto. "
+        "Configura SECRET_KEY en Railway lo antes posible."
+    )
+
 app = FastAPI(
     title="ObservadorUriel API",
     description="Sistema de Observador del Estudiante — IERD Uriel Murcia, Yacopí",
-    version="1.0.0",
+    version="1.1.0",
     redirect_slashes=False,
 )
 
+_frontend_url = os.getenv("FRONTEND_URL")
+_origenes = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://observadoruriel.netlify.app",
+]
+if _frontend_url and _frontend_url not in _origenes:
+    _origenes.append(_frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://observadoruriel.netlify.app",
-        "*",
-    ],
+    allow_origins=_origenes,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -235,6 +252,8 @@ app.include_router(docentes_router)
 app.include_router(estudiantes_router)
 app.include_router(anotaciones_router)
 app.include_router(reportes_router)
+app.include_router(grupos_router)
+app.include_router(pdf_router)
 
 
 @app.get("/")

@@ -1,21 +1,25 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getReportePorSede, getTopEstudiantes, getResumen } from '../api'
+import { getReportePorSede, getTopEstudiantes, getResumen, getAlertas } from '../api'
+
+const TIPO_TEXTO = { tipo1: '🟡 Tipo I', tipo2: '🟠 Tipo II', tipo3: '🔴 Tipo III', leve: '🟡 Falta Leve', grave: '🟠 Falta Grave', gravisima: '🔴 Falta Gravísima' }
 
 export default function Reportes() {
   const navigate = useNavigate()
   const [resumen, setResumen]       = useState(null)
   const [porSede, setPorSede]       = useState([])
   const [topEst, setTopEst]         = useState([])
+  const [alertas, setAlertas]       = useState({ umbral: 3, casos: [] })
   const [loading, setLoading]       = useState(true)
   const [tabActiva, setTabActiva]   = useState('general')
 
   useEffect(() => {
-    Promise.all([getResumen(), getReportePorSede(), getTopEstudiantes()])
-      .then(([r, s, t]) => {
+    Promise.all([getResumen(), getReportePorSede(), getTopEstudiantes(), getAlertas()])
+      .then(([r, s, t, al]) => {
         setResumen(r.data)
         setPorSede(s.data)
         setTopEst(t.data)
+        setAlertas(al.data)
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -40,6 +44,7 @@ export default function Reportes() {
           { key: 'general', label: '📊 General' },
           { key: 'sedes',   label: '🏫 Por Sede' },
           { key: 'top',     label: '🎒 Top Estudiantes' },
+          { key: 'alertas', label: `🚨 Alertas${alertas.casos.length ? ` (${alertas.casos.length})` : ''}` },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -228,6 +233,47 @@ export default function Reportes() {
                 ))}
               </div>
             </>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB ALERTAS ── */}
+      {tabActiva === 'alertas' && (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-400">
+            Estudiantes con {alertas.umbral} o más anotaciones de la misma clasificación,
+            sumando lo registrado por todos los docentes — para tener en cuenta en consejo de convivencia.
+          </p>
+          {alertas.casos.length === 0 ? (
+            <div className="card text-center text-gray-400 py-12">Sin casos que superen el umbral por ahora. 🎉</div>
+          ) : (
+            <div className="space-y-2">
+              {alertas.casos.map((c, i) => (
+                <div
+                  key={`${c.estudiante_id}-${c.tipo_falta}`}
+                  onClick={() => navigate(`/estudiantes/${c.estudiante_id}`)}
+                  className="card flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-red-300"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="font-semibold text-sm text-gray-800">{c.estudiante}</span>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{TIPO_TEXTO[c.tipo_falta] || c.tipo_falta}</span>
+                      {c.multi_docente && (
+                        <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                          👥 {c.docentes_involucrados.length} docentes distintos
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400">{c.grado} ({c.grupo}) · {c.sede}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Registrado por: {c.docentes_involucrados.join(', ')}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-lg font-bold text-red-600">{c.total}</div>
+                    <div className="text-xs text-gray-400">veces</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

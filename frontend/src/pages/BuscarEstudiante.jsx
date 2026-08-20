@@ -9,6 +9,8 @@ const GRADOS_ORDEN = [
 
 const GENEROS = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir']
 
+const ANIO_ACTUAL = new Date().getFullYear()
+
 const FORM_INICIAL = {
   nombres: '',
   apellidos: '',
@@ -20,6 +22,7 @@ const FORM_INICIAL = {
   genero: '',
   nombre_acudiente: '',
   telefono_acudiente: '',
+  anio_ingreso: ANIO_ACTUAL,
 }
 
 export default function BuscarEstudiante() {
@@ -83,6 +86,7 @@ export default function BuscarEstudiante() {
       const payload = {
         ...form,
         edad: form.edad ? parseInt(form.edad) : null,
+        anio_ingreso: form.anio_ingreso ? parseInt(form.anio_ingreso) : null,
       }
       const { data } = await crearEstudiante(payload)
       setModalAbierto(false)
@@ -304,6 +308,17 @@ export default function BuscarEstudiante() {
                     <option value="">—</option>
                     {GENEROS.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Año de ingreso</label>
+                  <input
+                    type="number"
+                    placeholder={String(ANIO_ACTUAL)}
+                    value={form.anio_ingreso}
+                    onChange={e => setForm({ ...form, anio_ingreso: e.target.value })}
+                    className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-verde focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Por defecto el año actual — es un estudiante nuevo.</p>
                 </div>
               </div>
 

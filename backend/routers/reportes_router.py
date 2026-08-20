@@ -8,6 +8,56 @@ from typing import Optional
 
 router = APIRouter(prefix="/api/reportes", tags=["reportes"])
 
+UMBRAL_ALERTA = 3  # anotaciones del mismo tipo_falta que disparan una alerta
+
+
+@router.get("/alertas")
+def alertas_activas(db: Session = Depends(get_db), _=Depends(get_usuario_actual)):
+    """
+    Estudiantes que acumulan UMBRAL_ALERTA o más anotaciones del mismo tipo_falta,
+    sin importar qué docente las registró. Pensado para revisión de consejo de convivencia.
+    """
+    conteo = (
+        db.query(
+            models.Anotacion.estudiante_id,
+            models.Anotacion.tipo_falta,
+            func.count(models.Anotacion.id).label("total"),
+        )
+        .group_by(models.Anotacion.estudiante_id, models.Anotacion.tipo_falta)
+        .having(func.count(models.Anotacion.id) >= UMBRAL_ALERTA)
+        .all()
+    )
+
+    resultado = []
+    for est_id, tipo_falta, total in conteo:
+        est = db.query(models.Estudiante).filter(models.Estudiante.id == est_id).first()
+        if not est:
+            continue
+        anots = (
+            db.query(models.Anotacion)
+            .filter(models.Anotacion.estudiante_id == est_id, models.Anotacion.tipo_falta == tipo_falta)
+            .order_by(models.Anotacion.fecha_anotacion.desc())
+            .all()
+        )
+        docentes_involucrados = sorted({
+            f"{a.docente.nombres} {a.docente.apellidos}" for a in anots if a.docente
+        })
+        resultado.append({
+            "estudiante_id": est.id,
+            "estudiante": f"{est.nombres} {est.apellidos}",
+            "sede": est.sede,
+            "grado": est.grado,
+            "grupo": est.grupo,
+            "tipo_falta": tipo_falta,
+            "total": total,
+            "docentes_involucrados": docentes_involucrados,
+            "multi_docente": len(docentes_involucrados) > 1,
+            "ultima_fecha": anots[0].fecha_anotacion.isoformat() if anots else None,
+        })
+
+    resultado.sort(key=lambda x: x["total"], reverse=True)
+    return {"umbral": UMBRAL_ALERTA, "casos": resultado}
+
 
 @router.get("/resumen")
 def resumen_general(db: Session = Depends(get_db), _=Depends(get_usuario_actual)):

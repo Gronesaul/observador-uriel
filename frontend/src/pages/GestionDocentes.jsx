@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { getDocentes, crearDocente } from '../api'
+import {
+  getDocentes, crearDocente, getAsignaciones, crearAsignacion, eliminarAsignacion,
+  getSedes, getGrados,
+} from '../api'
 
 const SEDES = [
   'Guadualito',
@@ -32,7 +35,12 @@ const FORM_INICIAL = {
   contrasena: '', sede: '', rol: 'docente',
 }
 
+const FORM_ASIGNACION_INICIAL = { docente_id: '', sede: '', grado: '', grupo: '' }
+
 export default function GestionDocentes() {
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+  const esSuperior = ['admin', 'rector'].includes(usuario.rol)
+
   const [docentes, setDocentes]   = useState([])
   const [loading, setLoading]     = useState(true)
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -43,6 +51,14 @@ export default function GestionDocentes() {
   const [buscar, setBuscar]       = useState('')
   const [filtroSede, setFiltroSede] = useState('')
 
+  // Asignación de grupos (director de curso)
+  const [asignaciones, setAsignaciones] = useState([])
+  const [sedesEst, setSedesEst] = useState([])
+  const [gradosEst, setGradosEst] = useState([])
+  const [formAsig, setFormAsig] = useState(FORM_ASIGNACION_INICIAL)
+  const [errorAsig, setErrorAsig] = useState('')
+  const [guardandoAsig, setGuardandoAsig] = useState(false)
+
   async function cargar() {
     setLoading(true)
     try {
@@ -52,7 +68,52 @@ export default function GestionDocentes() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { cargar() }, [])
+  async function cargarAsignaciones() {
+    try {
+      const { data } = await getAsignaciones()
+      setAsignaciones(data)
+    } catch (e) { console.error(e) }
+  }
+
+  useEffect(() => {
+    cargar()
+    if (esSuperior) {
+      cargarAsignaciones()
+      getSedes().then(r => setSedesEst(r.data)).catch(console.error)
+      getGrados().then(r => setGradosEst(r.data)).catch(console.error)
+    }
+  }, [])
+
+  async function handleCrearAsignacion(e) {
+    e.preventDefault()
+    setErrorAsig('')
+    if (!formAsig.docente_id || !formAsig.sede || !formAsig.grado) {
+      setErrorAsig('Selecciona docente, sede y grado.')
+      return
+    }
+    setGuardandoAsig(true)
+    try {
+      await crearAsignacion({
+        docente_id: parseInt(formAsig.docente_id),
+        sede: formAsig.sede,
+        grado: formAsig.grado,
+        grupo: formAsig.grupo || null,
+      })
+      setFormAsig(FORM_ASIGNACION_INICIAL)
+      cargarAsignaciones()
+    } catch (err) {
+      setErrorAsig(err.response?.data?.detail || 'No se pudo crear la asignación.')
+    } finally {
+      setGuardandoAsig(false)
+    }
+  }
+
+  async function handleEliminarAsignacion(id) {
+    try {
+      await eliminarAsignacion(id)
+      cargarAsignaciones()
+    } catch (e) { console.error(e) }
+  }
 
   function validar() {
     const e = {}
@@ -279,6 +340,89 @@ export default function GestionDocentes() {
           </div>
         )}
       </div>
+
+      {/* Asignación de grupos — solo rector/admin */}
+      {esSuperior && (
+        <div className="pt-2 border-t border-gray-200">
+          <h2 className="font-bold text-gray-700 text-base mt-4 mb-1">🎯 Directores de Grupo</h2>
+          <p className="text-xs text-gray-400 mb-3">
+            Solo el docente asignado como director/a de un sede+grado(+grupo) puede editar el perfil
+            (foto, datos) de los estudiantes de ese curso. Admin y rector siempre pueden.
+          </p>
+
+          <div className="card mb-3">
+            <form onSubmit={handleCrearAsignacion} className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Docente</label>
+                <select
+                  value={formAsig.docente_id}
+                  onChange={e => setFormAsig({ ...formAsig, docente_id: e.target.value })}
+                  className="w-full border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+                >
+                  <option value="">Seleccionar…</option>
+                  {docentes.map(d => (
+                    <option key={d.id} value={d.id}>{d.nombres} {d.apellidos}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Sede</label>
+                <select
+                  value={formAsig.sede}
+                  onChange={e => setFormAsig({ ...formAsig, sede: e.target.value })}
+                  className="w-full border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+                >
+                  <option value="">—</option>
+                  {sedesEst.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Grado</label>
+                <select
+                  value={formAsig.grado}
+                  onChange={e => setFormAsig({ ...formAsig, grado: e.target.value })}
+                  className="w-full border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+                >
+                  <option value="">—</option>
+                  {gradosEst.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Grupo (opcional)</label>
+                <input
+                  type="text" placeholder="Ej. 601"
+                  value={formAsig.grupo}
+                  onChange={e => setFormAsig({ ...formAsig, grupo: e.target.value })}
+                  className="w-full border-2 border-gray-200 rounded-lg px-2 py-2 text-sm focus:border-verde focus:outline-none"
+                />
+              </div>
+              <button type="submit" disabled={guardandoAsig} className="btn-primary text-sm md:col-span-5 w-fit">
+                {guardandoAsig ? 'Guardando...' : '➕ Asignar'}
+              </button>
+            </form>
+            {errorAsig && <p className="text-red-500 text-xs mt-2">{errorAsig}</p>}
+            <p className="text-xs text-gray-400 mt-2">Deja "Grupo" en blanco para asignar todo el grado en esa sede.</p>
+          </div>
+
+          {asignaciones.length === 0 ? (
+            <div className="card text-center text-gray-400 py-6 text-sm">Sin asignaciones todavía.</div>
+          ) : (
+            <div className="space-y-2">
+              {asignaciones.map(a => (
+                <div key={a.id} className="card flex items-center justify-between text-sm py-3">
+                  <div>
+                    <span className="font-semibold text-gray-700">{a.docente_nombre}</span>
+                    <span className="text-gray-400"> — {a.sede} · {a.grado}{a.grupo ? ` (${a.grupo})` : ' · todo el grado'}</span>
+                  </div>
+                  <button onClick={() => handleEliminarAsignacion(a.id)} className="text-red-500 text-xs hover:underline">
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

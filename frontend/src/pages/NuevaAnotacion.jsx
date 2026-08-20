@@ -152,6 +152,7 @@ export default function NuevaAnotacion() {
   const [resultado, setResultado]   = useState(null)
 
   const [tipoRegistro, setTipoRegistro] = useState('')   // "situacion" | "falta"
+  const [area, setArea]                 = useState('convivencia')   // "convivencia" | "academica"
   const [tipoFalta, setTipoFalta]       = useState('')   // tipo1/tipo2/tipo3 | leve/grave/gravisima
   const [categoria, setCategoria]       = useState('')
   const [descripcion, setDescripcion]   = useState('')
@@ -186,6 +187,7 @@ export default function NuevaAnotacion() {
       const { data } = await crearAnotacion({
         estudiante_id: parseInt(id),
         tipo_registro: tipoRegistro,
+        area,
         tipo_falta: tipoFalta,
         categoria,
         descripcion,
@@ -324,6 +326,33 @@ export default function NuevaAnotacion() {
             </button>
           </div>
           {errors.tipoRegistro && <p className="text-red-500 text-xs">{errors.tipoRegistro}</p>}
+        </div>
+
+        {/* PASO 1.5 — Área */}
+        <div className="card space-y-2">
+          <label className="block font-bold text-gray-700 mb-1">¿A qué área pertenece? *</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setArea('convivencia')}
+              className={`text-left p-3 rounded-xl border-2 transition-all ${
+                area === 'convivencia' ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-bold text-sm">🤝 Convivencia</div>
+              <div className="text-xs text-gray-500 mt-0.5">Afecta la convivencia escolar.</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setArea('academica')}
+              className={`text-left p-3 rounded-xl border-2 transition-all ${
+                area === 'academica' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-bold text-sm">📚 Académico</div>
+              <div className="text-xs text-gray-500 mt-0.5">Compromiso o rendimiento académico.</div>
+            </button>
+          </div>
         </div>
 
         {/* PASO 2 — Clasificación */}

@@ -75,3 +75,36 @@ def requerir_coordinador(usuario=Depends(get_usuario_actual)):
     if usuario.rol not in ["coordinador", "admin"]:
         raise HTTPException(status_code=403, detail="Se requiere rol de coordinador o admin")
     return usuario
+
+
+ROLES_SUPERIORES = ("admin", "rector")
+
+
+def es_superior(usuario) -> bool:
+    """Admin/rector: ven y administran todo, sin restricción de grupo."""
+    return usuario.rol in ROLES_SUPERIORES
+
+
+def requerir_superior(usuario=Depends(get_usuario_actual)):
+    if not es_superior(usuario):
+        raise HTTPException(status_code=403, detail="Se requiere rol de rector o admin")
+    return usuario
+
+
+def puede_gestionar_estudiante(usuario, estudiante, db) -> bool:
+    """
+    True si el usuario puede editar el perfil de este estudiante:
+    - admin/rector: siempre
+    - docente: solo si está asignado como director/a de ese sede+grado(+grupo)
+    """
+    if es_superior(usuario):
+        return True
+    asignaciones = db.query(models.AsignacionGrupo).filter(
+        models.AsignacionGrupo.docente_id == usuario.id,
+        models.AsignacionGrupo.sede == estudiante.sede,
+        models.AsignacionGrupo.grado == estudiante.grado,
+    ).all()
+    for a in asignaciones:
+        if not a.grupo or a.grupo == estudiante.grupo:
+            return True
+    return False

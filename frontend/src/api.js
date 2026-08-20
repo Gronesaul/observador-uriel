@@ -39,6 +39,8 @@ export const getEstudiantes = (params) => api.get('/api/estudiantes/', { params 
 export const getFicha = (id) => api.get(`/api/estudiantes/${id}`)
 export const crearEstudiante = (data) => api.post('/api/estudiantes/', data)
 export const updateAcudiente = (id, data) => api.put(`/api/estudiantes/${id}/acudiente`, data)
+export const updatePerfilEstudiante = (id, data) => api.put(`/api/estudiantes/${id}/perfil`, data)
+export const updateAnioIngreso = (id, anio_ingreso) => api.put(`/api/estudiantes/${id}/anio-ingreso`, { anio_ingreso })
 export const getSedes = () => api.get('/api/estudiantes/sedes')
 export const getGrados = () => api.get('/api/estudiantes/grados')
 
@@ -57,3 +59,31 @@ export const getResumen = () => api.get('/api/reportes/resumen')
 export const getReportePorSede = () => api.get('/api/reportes/por-sede')
 export const getTopEstudiantes = () => api.get('/api/reportes/estudiantes-con-mas-anotaciones')
 export const getSeguimientosActivos = () => api.get('/api/reportes/seguimientos-activos')
+export const getAlertas = () => api.get('/api/reportes/alertas')
+
+// ── GRUPOS (director de grupo) ─────────────────────────
+export const getAsignaciones = () => api.get('/api/grupos/')
+export const crearAsignacion = (data) => api.post('/api/grupos/', data)
+export const eliminarAsignacion = (id) => api.delete(`/api/grupos/${id}`)
+
+// ── PDF ─────────────────────────────────────────────────
+export const urlPdfEstudiante = (id) => `${API_URL}/api/pdf/estudiante/${id}`
+export const urlPdfActaComite = (seguimientoId) => `${API_URL}/api/pdf/acta-comite/${seguimientoId}`
+
+// Descarga un PDF protegido (adjunta el token) y lo abre en pestaña nueva
+export async function abrirPdf(url, nombreSugerido) {
+  const token = localStorage.getItem('token')
+  const resp = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!resp.ok) throw new Error('No se pudo generar el PDF')
+  const blob = await resp.blob()
+  const blobUrl = window.URL.createObjectURL(blob)
+  const w = window.open(blobUrl, '_blank')
+  if (!w) {
+    // Popup bloqueado: forzar descarga
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = nombreSugerido || 'documento.pdf'
+    a.click()
+  }
+  setTimeout(() => window.URL.revokeObjectURL(blobUrl), 30000)
+}

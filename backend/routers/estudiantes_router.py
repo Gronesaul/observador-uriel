@@ -2,13 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 import models
-from auth import get_usuario_actual, requerir_docente
-from schemas import EstudianteOut, EstudianteCreate, EstudianteUpdate, FichaEstudianteOut, AnotacionOut, SeguimientoOut
+from auth import get_usuario_actual, requerir_docente, requerir_superior, puede_gestionar_estudiante
+from schemas import (
+    EstudianteOut, EstudianteCreate, EstudianteUpdate, EstudiantePerfilUpdate,
+    EstudianteAnioIngresoUpdate, FichaEstudianteOut, AnotacionOut, SeguimientoOut,
+)
 from protocolo import calcular_protocolo, generar_mensaje_whatsapp
 from typing import List, Optional
 from datetime import datetime
 
 router = APIRouter(prefix="/api/estudiantes", tags=["estudiantes"])
+
+# Límite generoso para una foto comprimida en base64 (~350KB de imagen real)
+MAX_FOTO_BASE64_CHARS = 500_000
 
 
 @router.post("/", response_model=EstudianteOut, status_code=201)
@@ -34,6 +40,7 @@ def crear_estudiante(
         genero=data.genero,
         nombre_acudiente=data.nombre_acudiente,
         telefono_acudiente=data.telefono_acudiente,
+        anio_ingreso=data.anio_ingreso,
         activo=True,
     )
     db.add(nuevo)
@@ -82,7 +89,7 @@ def listar_grados(db: Session = Depends(get_db), _=Depends(get_usuario_actual)):
 
 
 @router.get("/{estudiante_id}", response_model=FichaEstudianteOut)
-def ficha_estudiante(estudiante_id: int, db: Session = Depends(get_db), _=Depends(get_usuario_actual)):
+def ficha_estudiante(estudiante_id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_actual)):
     est = db.query(models.Estudiante).filter(models.Estudiante.id == estudiante_id).first()
     if not est:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
@@ -130,6 +137,7 @@ def ficha_estudiante(estudiante_id: int, db: Session = Depends(get_db), _=Depend
     for a in anotaciones:
         ao = AnotacionOut(
             id=a.id, estudiante_id=a.estudiante_id, docente_id=a.docente_id,
+            tipo_registro=a.tipo_registro, area=a.area or "convivencia",
             tipo_falta=a.tipo_falta, categoria=a.categoria,
             descripcion=a.descripcion, acciones_inmediatas=a.acciones_inmediatas,
             sede_origen=a.sede_origen, fecha_anotacion=a.fecha_anotacion,
@@ -153,7 +161,9 @@ def ficha_estudiante(estudiante_id: int, db: Session = Depends(get_db), _=Depend
         documento=est.documento, sede=est.sede, grado=est.grado,
         grupo=est.grupo, edad=est.edad, genero=est.genero,
         nombre_acudiente=est.nombre_acudiente,
-        telefono_acudiente=est.telefono_acudiente, activo=est.activo
+        telefono_acudiente=est.telefono_acudiente,
+        foto_base64=est.foto_base64, anio_ingreso=est.anio_ingreso,
+        activo=est.activo
     )
 
     return FichaEstudianteOut(
@@ -162,6 +172,7 @@ def ficha_estudiante(estudiante_id: int, db: Session = Depends(get_db), _=Depend
         seguimientos=seg_out,
         resumen={"tipo1": t1, "tipo2": t2, "tipo3": t3, "total": t1 + t2 + t3, "protocolo_actual": protocolo_actual},
         whatsapp_url=whatsapp_url,
+        puede_editar_perfil=puede_gestionar_estudiante(usuario, est, db),
     )
 
 
@@ -181,3 +192,57 @@ def actualizar_acudiente(
         est.telefono_acudiente = data.telefono_acudiente
     db.commit()
     return {"mensaje": "Datos del acudiente actualizados"}
+
+
+@router.put("/{estudiante_id}/perfil", response_model=EstudianteOut)
+def actualizar_perfil(
+    estudiante_id: int,
+    data: EstudiantePerfilUpdate,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_actual),
+):
+    """
+    Edita datos del perfil (incluida la foto). Permitido para admin/rector,
+    o para el docente asignado como director/a del grupo de ese estudiante.
+    No permite tocar el año de ingreso — para eso está el endpoint de abajo.
+    """
+    est = db.query(models.Estudiante).filter(models.Estudiante.id == estudiante_id).first()
+    if not est:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+
+    if not puede_gestionar_estudiante(usuario, est, db):
+        raise HTTPException(
+            status_code=403,
+            detail="No estás asignado/a como director/a de este grupo. Pídele al rector que te asigne el curso.",
+        )
+
+    if data.foto_base64 is not None:
+        if len(data.foto_base64) > MAX_FOTO_BASE64_CHARS:
+            raise HTTPException(status_code=413, detail="La foto es muy pesada. Usa una imagen más comprimida.")
+        est.foto_base64 = data.foto_base64
+
+    for campo in ["nombres", "apellidos", "grado", "grupo", "edad", "genero", "nombre_acudiente", "telefono_acudiente"]:
+        valor = getattr(data, campo)
+        if valor is not None:
+            setattr(est, campo, valor)
+
+    db.commit()
+    db.refresh(est)
+    return est
+
+
+@router.put("/{estudiante_id}/anio-ingreso", response_model=EstudianteOut)
+def actualizar_anio_ingreso(
+    estudiante_id: int,
+    data: EstudianteAnioIngresoUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(requerir_superior),
+):
+    """Solo rector/admin puede corregir el año de ingreso de un estudiante."""
+    est = db.query(models.Estudiante).filter(models.Estudiante.id == estudiante_id).first()
+    if not est:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+    est.anio_ingreso = data.anio_ingreso
+    db.commit()
+    db.refresh(est)
+    return est

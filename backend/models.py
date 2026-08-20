@@ -20,6 +20,21 @@ class Usuario(Base):
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
     anotaciones = relationship("Anotacion", back_populates="docente")
+    asignaciones = relationship("AsignacionGrupo", back_populates="docente")
+
+
+class AsignacionGrupo(Base):
+    """Qué docente es director/a de qué sede+grado+grupo. Administrado por rector/admin."""
+    __tablename__ = "asignaciones_grupo"
+
+    id = Column(Integer, primary_key=True, index=True)
+    docente_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    sede = Column(String, nullable=False)
+    grado = Column(String, nullable=False)
+    grupo = Column(String, nullable=True)
+    fecha_asignacion = Column(DateTime, default=datetime.utcnow)
+
+    docente = relationship("Usuario", back_populates="asignaciones")
 
 
 class Estudiante(Base):
@@ -37,6 +52,8 @@ class Estudiante(Base):
     genero = Column(String, nullable=True)
     nombre_acudiente = Column(String, nullable=True)
     telefono_acudiente = Column(String, nullable=True)  # Para WhatsApp
+    foto_base64 = Column(Text, nullable=True)            # Foto comprimida, como data URI
+    anio_ingreso = Column(Integer, nullable=True)         # Año en que ingresó; null = no registrado (antiguo)
     activo = Column(Boolean, default=True)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
 
@@ -62,6 +79,10 @@ class Anotacion(Base):
     # Si tipo_registro="situacion": "tipo1" | "tipo2" | "tipo3"
     # Si tipo_registro="falta":    "leve"  | "grave" | "gravisima"
     categoria = Column(String, nullable=True)      # Subcategoría específica
+
+    area = Column(String, default="convivencia", nullable=True)
+    # "convivencia" → afecta la convivencia escolar
+    # "academica"   → compromiso/rendimiento académico
 
     descripcion = Column(Text, nullable=False)
     acciones_inmediatas = Column(Text, nullable=True)
