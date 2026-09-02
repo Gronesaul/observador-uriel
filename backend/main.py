@@ -215,9 +215,96 @@ def importar_estudiantes_inicial():
         db.close()
 
 
+def corregir_matricula_2026():
+    """
+    Corrección puntual de matrícula según 'PLANO MATRICULA JULIO 22 DE 2026'.
+    Corre UNA SOLA VEZ (marcada en la tabla migraciones_aplicadas) para no
+    revertir ediciones manuales futuras que haga un admin sobre estos mismos
+    estudiantes. No borra ninguna anotación: los estudiantes "fantasma" y los
+    retirados se marcan activo=False (soft), nunca se hace DELETE.
+    """
+    from sqlalchemy import text
+    from database import SessionLocal
+
+    MARCA = "correccion_matricula_2026_07"
+
+    with engine.connect() as conn:
+        conn.execute(text(
+            "CREATE TABLE IF NOT EXISTS migraciones_aplicadas (nombre VARCHAR PRIMARY KEY)"
+        ))
+        conn.commit()
+        ya_aplicada = conn.execute(
+            text("SELECT 1 FROM migraciones_aplicadas WHERE nombre = :n"),
+            {"n": MARCA},
+        ).first()
+        if ya_aplicada:
+            return
+
+    db = SessionLocal()
+    try:
+        # 1) Matriculados que faltaban en el observador (INSERT solo si no existen)
+        NUEVOS = [
+            ('EMMANUEL', 'ULLOA', '1070629021', 'ESCUELA RURAL  PASURCHA', 'TERCERO', '301'),
+            ('NICOL', 'SALDAÑA', '1121126478', 'ESCUELA RURAL LOS ANGELES DE APOSENTOS', 'QUINTO', '501'),
+            ('DANNA', 'SUAREZ', '1023416695', 'ESCUELA RURAL YASAL ALTO', 'PRIMERO', '101'),
+            ('JHOAN', 'SUAREZ', '1023405890', 'ESCUELA RURAL YASAL ALTO', 'CUARTO', '401'),
+            ('LEIDY', 'ESCARRAGA', '1023003866', 'INSTITUCION EDUCATIVA DEPARTAMENTAL URIEL MURCIA', 'SEPTIMO', '701'),
+            ('VALENTINA', 'SALDAÑA', '1057390289', 'INSTITUCION EDUCATIVA DEPARTAMENTAL URIEL MURCIA', 'OCTAVO', '801'),
+            ('LUIS', 'CARABALLO', '1074960532', 'INSTITUCION EDUCATIVA DEPARTAMENTAL URIEL MURCIA', 'SEXTO', '601'),
+        ]
+        for nombres, apellidos, doc, sede, grado, grupo in NUEVOS:
+            if db.query(models.Estudiante).filter(models.Estudiante.documento == doc).first():
+                continue
+            db.add(models.Estudiante(
+                nombres=nombres, apellidos=apellidos, documento=doc,
+                sede=sede, grado=grado, grupo=grupo, activo=True,
+            ))
+
+        # 2) No existen en el plano bajo ningún estado (posible error de documento) → desactivar, no borrar
+        FANTASMA = ['1074960733', '1189963807', '1071144058']
+        for doc in FANTASMA:
+            est = db.query(models.Estudiante).filter(models.Estudiante.documento == doc).first()
+            if est:
+                est.activo = False
+
+        # 3) Activos en el observador pero RETIRADO en el plano → desactivar
+        RETIRADOS = ['1074960306', '1057390230']
+        for doc in RETIRADOS:
+            est = db.query(models.Estudiante).filter(models.Estudiante.documento == doc).first()
+            if est:
+                est.activo = False
+
+        # 4) Grado desactualizado (promovidos sin actualizar)
+        GRADO_ACTUALIZADO = {
+            '1141720704': ('SEXTO', '601'),   # Michael Emanuel Cucaita Casallas: Quinto -> Sexto
+            '1074996485': ('PRIMERO', '101'), # Nareth Luciana Trespalacios Anzola: Grado 0 -> Primero
+        }
+        for doc, (grado, grupo) in GRADO_ACTUALIZADO.items():
+            est = db.query(models.Estudiante).filter(models.Estudiante.documento == doc).first()
+            if est:
+                est.grado = grado
+                est.grupo = grupo
+
+        db.commit()
+        print("[Corrección matrícula 2026-07] aplicada correctamente")
+
+        with engine.connect() as conn:
+            conn.execute(
+                text("INSERT INTO migraciones_aplicadas (nombre) VALUES (:n)"),
+                {"n": MARCA},
+            )
+            conn.commit()
+    except Exception as e:
+        print(f"Error en corrección de matrícula 2026-07: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 migrar_columnas()
 crear_admin_inicial()
 importar_estudiantes_inicial()
+corregir_matricula_2026()
 
 if os.getenv("SECRET_KEY") is None:
     print(

@@ -108,3 +108,20 @@ def puede_gestionar_estudiante(usuario, estudiante, db) -> bool:
         if not a.grupo or a.grupo == estudiante.grupo:
             return True
     return False
+
+
+def puede_ver_estudiante(usuario, estudiante, db) -> bool:
+    """
+    True si el usuario puede VER el historial/anotaciones de este estudiante
+    en el dashboard y reportes (más permisivo que puede_gestionar_estudiante):
+    - admin/rector: siempre
+    - docente de la misma sede: sí (aunque no sea director de grupo)
+    - docente asignado como director de ese sede+grado(+grupo): sí
+    La búsqueda de estudiante por documento/nombre no pasa por esta función:
+    esa sigue abierta a todos los docentes.
+    """
+    if es_superior(usuario):
+        return True
+    if usuario.sede and estudiante.sede and usuario.sede == estudiante.sede:
+        return True
+    return puede_gestionar_estudiante(usuario, estudiante, db)

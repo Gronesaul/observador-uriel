@@ -151,6 +151,9 @@ CATEGORIAS_FALTAS = {
         "Incumplimiento de tareas o compromisos académicos",
         "Juegos bruscos en descanso (sin lesión)",
         "Salir del salón sin permiso",
+        "Bajo rendimiento en una asignatura (primera alerta)",
+        "No presentar trabajos o evaluaciones de forma reiterada",
+        "Incumplimiento leve de compromisos académicos",
         "Otra falta leve al Manual",
     ],
     "grave": [
@@ -162,6 +165,9 @@ CATEGORIAS_FALTAS = {
         "Salir de la institución sin autorización",
         "Incitar a otros estudiantes a la indisciplina",
         "Consumo de cigarrillo o alcohol en la institución",
+        "Bajo rendimiento sostenido en varias asignaturas pese a acompañamiento",
+        "Pérdida de más de dos áreas en el periodo",
+        "No presentarse a actividades de refuerzo o recuperación asignadas",
         "Otra falta grave al Manual",
     ],
     "gravisima": [
@@ -171,6 +177,8 @@ CATEGORIAS_FALTAS = {
         "Tráfico o distribución de sustancias dentro del colegio",
         "Amenaza a miembros de la comunidad educativa",
         "Actos que atenten contra la moral e imagen del colegio",
+        "Riesgo de no promoción por reiterado incumplimiento académico pese a todo el acompañamiento",
+        "Abandono académico sostenido (no presenta ninguna actividad en el periodo)",
         "Otra falta gravísima al Manual",
     ],
 }
@@ -271,7 +279,7 @@ def generar_mensaje_whatsapp(
             f"📝 *Detalle:* {descripcion}\n\n"
             f"¡Felicitaciones! En el colegio también nos sentimos orgullosos.\n"
             f"*IERD Uriel Murcia — Yacopí, Cundinamarca*\n"
-            f"📞 314 440 5106"
+            f"📞 300 535 0292"
         )
         import urllib.parse
         msg_encoded = urllib.parse.quote(mensaje)
@@ -305,7 +313,7 @@ def generar_mensaje_whatsapp(
         f"⚖️ *Paso a seguir:* {protocolo_titulo}\n\n"
         f"Por favor comuníquese con la institución para mayor información.\n"
         f"*IERD Uriel Murcia — Yacopí, Cundinamarca*\n"
-        f"📞 314 440 5106"
+        f"📞 300 535 0292"
     )
 
     import urllib.parse

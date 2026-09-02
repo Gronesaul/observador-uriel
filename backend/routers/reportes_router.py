@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from database import get_db
 import models
-from auth import get_usuario_actual, requerir_coordinador
+from auth import get_usuario_actual, requerir_coordinador, es_superior, puede_ver_estudiante
 from typing import Optional
 
 router = APIRouter(prefix="/api/reportes", tags=["reportes"])
@@ -12,7 +12,7 @@ UMBRAL_ALERTA = 3  # anotaciones del mismo tipo_falta que disparan una alerta
 
 
 @router.get("/alertas")
-def alertas_activas(db: Session = Depends(get_db), _=Depends(get_usuario_actual)):
+def alertas_activas(db: Session = Depends(get_db), usuario=Depends(get_usuario_actual)):
     """
     Estudiantes que acumulan UMBRAL_ALERTA o más anotaciones del mismo tipo_falta,
     sin importar qué docente las registró. Pensado para revisión de consejo de convivencia.
@@ -33,6 +33,8 @@ def alertas_activas(db: Session = Depends(get_db), _=Depends(get_usuario_actual)
     for est_id, tipo_falta, total in conteo:
         est = db.query(models.Estudiante).filter(models.Estudiante.id == est_id).first()
         if not est:
+            continue
+        if not puede_ver_estudiante(usuario, est, db):
             continue
         anots = (
             db.query(models.Anotacion)
@@ -109,7 +111,7 @@ def reporte_por_sede(db: Session = Depends(get_db), _=Depends(get_usuario_actual
 
 
 @router.get("/estudiantes-con-mas-anotaciones")
-def top_estudiantes(limit: int = Query(10, le=50), db: Session = Depends(get_db), _=Depends(get_usuario_actual)):
+def top_estudiantes(limit: int = Query(10, le=50), db: Session = Depends(get_db), usuario=Depends(get_usuario_actual)):
     conteo = (
         db.query(
             models.Anotacion.estudiante_id,
@@ -118,30 +120,34 @@ def top_estudiantes(limit: int = Query(10, le=50), db: Session = Depends(get_db)
         .filter(models.Anotacion.tipo_registro != "reconocimiento")
         .group_by(models.Anotacion.estudiante_id)
         .order_by(func.count(models.Anotacion.id).desc())
-        .limit(limit)
         .all()
     )
     resultado = []
     for est_id, total in conteo:
+        if len(resultado) >= limit:
+            break
         est = db.query(models.Estudiante).filter(models.Estudiante.id == est_id).first()
-        if est:
-            t3 = db.query(models.Anotacion).filter(
-                models.Anotacion.estudiante_id == est_id,
-                models.Anotacion.tipo_falta == "tipo3"
-            ).count()
-            resultado.append({
-                "id": est.id,
-                "nombre": f"{est.nombres} {est.apellidos}",
-                "sede": est.sede,
-                "grado": est.grado,
-                "total_anotaciones": total,
-                "tiene_tipo3": t3 > 0,
-            })
+        if not est:
+            continue
+        if not puede_ver_estudiante(usuario, est, db):
+            continue
+        t3 = db.query(models.Anotacion).filter(
+            models.Anotacion.estudiante_id == est_id,
+            models.Anotacion.tipo_falta == "tipo3"
+        ).count()
+        resultado.append({
+            "id": est.id,
+            "nombre": f"{est.nombres} {est.apellidos}",
+            "sede": est.sede,
+            "grado": est.grado,
+            "total_anotaciones": total,
+            "tiene_tipo3": t3 > 0,
+        })
     return resultado
 
 
 @router.get("/seguimientos-activos")
-def seguimientos_activos(db: Session = Depends(get_db), _=Depends(get_usuario_actual)):
+def seguimientos_activos(db: Session = Depends(get_db), usuario=Depends(get_usuario_actual)):
     segs = (
         db.query(models.Seguimiento)
         .filter(models.Seguimiento.estado.in_(["pendiente", "en_proceso"]))
@@ -151,6 +157,8 @@ def seguimientos_activos(db: Session = Depends(get_db), _=Depends(get_usuario_ac
     resultado = []
     for s in segs:
         est = db.query(models.Estudiante).filter(models.Estudiante.id == s.estudiante_id).first()
+        if not est or not puede_ver_estudiante(usuario, est, db):
+            continue
         resultado.append({
             "id": s.id,
             "estudiante": f"{est.nombres} {est.apellidos}" if est else "N/A",
