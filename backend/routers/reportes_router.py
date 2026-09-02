@@ -161,6 +161,7 @@ def seguimientos_activos(db: Session = Depends(get_db), usuario=Depends(get_usua
             continue
         resultado.append({
             "id": s.id,
+            "estudiante_id": est.id,
             "estudiante": f"{est.nombres} {est.apellidos}" if est else "N/A",
             "sede": est.sede if est else "N/A",
             "grado": est.grado if est else "N/A",

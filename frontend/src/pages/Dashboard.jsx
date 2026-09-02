@@ -110,7 +110,7 @@ export default function Dashboard() {
               <div
                 key={s.id}
                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer hover:shadow-md transition-shadow ${PROTOCOLO_COLORES[s.tipo_accion] || 'bg-gray-50 border-gray-200'}`}
-                onClick={() => navigate(`/estudiantes/${s.id}`)}
+                onClick={() => navigate(`/estudiantes/${s.estudiante_id}`)}
               >
                 <div>
                   <div className="font-semibold text-sm">{s.estudiante}</div>
