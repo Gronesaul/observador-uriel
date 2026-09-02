@@ -144,6 +144,83 @@ const RECONOCIMIENTOS = {
   },
 }
 
+// ── JUSTICIA RESTAURATIVA ESCOLAR ────────────────────────────────────────
+// Mismo contenido de referencia que /conducto-regular, reutilizado aquí como
+// sugerencia puntual según el tipo/gravedad de lo registrado.
+
+const JUSTICIA_RESTAURATIVA = {
+  circulos: {
+    titulo: 'Círculos de Paz',
+    icono: '⭕',
+    descripcion: 'Espacio de diálogo estructurado donde las partes (víctima, agresor, testigos, docente) hablan sobre lo ocurrido, el daño causado y cómo repararlo.',
+    pasos: [
+      'El orientador o docente capacitado facilita el espacio.',
+      'Cada persona habla sobre cómo fue afectada.',
+      'Se construye colectivamente un acuerdo de reparación.',
+    ],
+  },
+  mediacion: {
+    titulo: 'Mediación Escolar',
+    icono: '🤝',
+    descripcion: 'Un tercero imparcial (docente, orientador o par mediador) ayuda a las partes en conflicto a comunicarse y encontrar una solución mutuamente aceptable.',
+    pasos: [
+      'Consentimiento voluntario de ambas partes.',
+      'Cada parte expresa su posición sin interrupciones.',
+      'Redacción de acuerdo y firma.',
+    ],
+  },
+  acuerdos: {
+    titulo: 'Acuerdos de Convivencia',
+    icono: '📜',
+    descripcion: 'Documento formal con los compromisos que asume el estudiante (y su acudiente) para reparar el daño causado y cambiar la conducta problemática.',
+    pasos: [
+      'Redacción clara de compromisos específicos (no genéricos).',
+      'Firma del estudiante, acudiente, docente y directivo.',
+      'Fechas concretas de revisión del cumplimiento.',
+    ],
+  },
+  seguimiento: {
+    titulo: 'Seguimiento Restaurativo',
+    icono: '🔄',
+    descripcion: 'Acompañamiento continuo para verificar que los acuerdos se cumplan y que la relación entre las partes mejore progresivamente.',
+    pasos: [
+      'Entrevistas individuales con las partes a las 2, 4 y 8 semanas.',
+      'Registro de avances en el observador.',
+      'Si no hay avance en 4 semanas, escalar al siguiente nivel de atención.',
+    ],
+  },
+}
+
+// Reglas por tipo_registro + gravedad. Devuelve las claves de JUSTICIA_RESTAURATIVA
+// aplicables y una nota corta de contexto. null => no aplica (reconocimiento).
+function sugerirJusticiaRestaurativa(tipoRegistro, tipoFalta) {
+  if (tipoRegistro === 'reconocimiento') return null
+
+  const leve = tipoFalta === 'tipo1' || tipoFalta === 'leve'
+  const grave = tipoFalta === 'tipo2' || tipoFalta === 'grave'
+  const gravisima = tipoFalta === 'tipo3' || tipoFalta === 'gravisima'
+
+  if (leve) {
+    return {
+      nota: 'Es una falta o situación leve: ideal para resolver con diálogo directo antes de escalar.',
+      claves: ['circulos', 'seguimiento'],
+    }
+  }
+  if (grave) {
+    return {
+      nota: 'Situación o falta grave: la mediación y los acuerdos formales complementan el protocolo, no lo reemplazan.',
+      claves: ['mediacion', 'acuerdos', 'seguimiento'],
+    }
+  }
+  if (gravisima) {
+    return {
+      nota: 'Gravísima: el protocolo formal de arriba es prioritario. Estas herramientas solo aplican como acompañamiento posterior, si la institución lo considera pertinente.',
+      claves: ['acuerdos', 'seguimiento'],
+    }
+  }
+  return null
+}
+
 const PROTO_LABELS = {
   llamado_atencion:     '🟡 Llamado de Atención',
   citacion_padres:      '🟠 Citación al Acudiente',
@@ -274,6 +351,37 @@ export default function NuevaAnotacion() {
             )}
           </div>
         )}
+
+        {(() => {
+          const sugerencia = sugerirJusticiaRestaurativa(tipoRegistro, tipoFalta)
+          if (!sugerencia) return null
+          return (
+            <div className="card border-2 border-teal-200">
+              <div className="font-bold text-sm text-teal-800 mb-1">🕊️ Justicia Restaurativa Escolar</div>
+              <p className="text-xs text-gray-500 mb-3">{sugerencia.nota}</p>
+              <div className="space-y-3">
+                {sugerencia.claves.map(clave => {
+                  const jr = JUSTICIA_RESTAURATIVA[clave]
+                  return (
+                    <div key={clave} className="bg-teal-50 rounded-lg p-3">
+                      <div className="font-semibold text-sm text-teal-900">{jr.icono} {jr.titulo}</div>
+                      <p className="text-xs text-gray-600 mt-1 leading-snug">{jr.descripcion}</p>
+                      <ul className="text-xs text-gray-500 mt-2 space-y-0.5 list-disc list-inside">
+                        {jr.pasos.map((p, i) => <li key={i}>{p}</li>)}
+                      </ul>
+                    </div>
+                  )
+                })}
+              </div>
+              <button
+                onClick={() => navigate('/conducto-regular')}
+                className="text-xs text-teal-700 font-semibold mt-3 hover:underline"
+              >
+                Ver guía completa de Justicia Restaurativa →
+              </button>
+            </div>
+          )
+        })()}
 
         {resultado.whatsapp_url && (
           <div className="card">
